@@ -1,5 +1,5 @@
 INVENTÁRIO WEB V27
-Base V26 funcional.
+Base V27 funcional.
 
 Nova função:
 - Todos os usuários autenticados agora têm acesso ao botão "Alterar minha senha".
