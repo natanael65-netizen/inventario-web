@@ -18,7 +18,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 @media(max-width:700px){table{display:block;overflow:auto}header{align-items:flex-start;gap:10px;flex-direction:column}}
 </style>
 </head>
-<body><div style="position:fixed;top:6px;right:10px;font-size:11px;opacity:.65;z-index:9999">Versão V27 — alteração de senha disponível para todos os usuários</div>
+<body><div style="position:fixed;top:6px;right:10px;font-size:11px;opacity:.65;z-index:9999">Versão V30 — histórico com responsável pelo lançamento</div>
 <section id="loginView" class="login card">
 <h1>Inventário Web</h1><p>Acesso ao sistema de peças e equipamentos</p>
 <input id="email" type="email" placeholder="E-mail">
@@ -54,15 +54,16 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 
 <section id="estoque" class="page hidden">
 <div class="card"><h2>Estoque atual</h2>
+<p><small>Usuários Operacional, Gestor e Administrador podem editar o estoque por meio de ajuste. O sistema registra a diferença como movimentação do tipo Ajuste e preserva o histórico.</small></p>
 <div class="filterbar"><input id="buscaEstoque" placeholder="Buscar código, descrição ou restaurante" oninput="renderEstoque()"><select id="filtroRest" onchange="renderEstoque()"><option value="">Todos os restaurantes</option></select><select id="filtroStatus" onchange="renderEstoque()"><option value="">Todos os status</option><option>OK</option><option>ATENÇÃO</option><option>CRÍTICO</option></select></div>
-<div style="overflow:auto"><table><thead><tr><th>Restaurante</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th></tr></thead><tbody id="estoqueBody"></tbody></table></div>
+<div style="overflow:auto"><table><thead><tr><th>Restaurante</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="estoqueBody"></tbody></table></div>
 </div>
 </section>
 
 <section id="mov" class="page hidden">
 <div class="card"><h2>Nova movimentação</h2>
 <select id="tipo" onchange="ajustaMov()"><option>Entrada</option><option>Retirada</option><option>Transferência</option></select>
-<select id="origem"></select><select id="destino"></select><select id="peca"></select>
+<select id="origem"></select><select id="destino"></select><div class="peca-search-wrap"><input id="pecaBusca" list="pecasLista" placeholder="Peça — digite código ou nome" autocomplete="off"><datalist id="pecasLista"></datalist><select id="peca" class="hidden"></select></div>
 <input id="quantidade" type="number" min="0.01" step="0.01" placeholder="Quantidade">
 <input id="motivo" placeholder="Motivo / observação">
 <button onclick="salvarMov()">Registrar movimentação</button><div id="movMsg" class="msg hidden"></div>
@@ -70,7 +71,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 </section>
 
 <section id="historico" class="page hidden">
-<div class="card"><h2>Histórico</h2><div class="filterbar"><select id="filtroHistTipo" onchange="renderHist(ultimaHistorico)"><option value="">Todos os tipos</option><option>Entrada</option><option>Retirada</option><option>Transferência</option><option>Ajuste</option></select></div><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição da peça</th><th>Origem / Destino</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody id="histBody"></tbody></table></div></div>
+<div class="card"><h2>Histórico</h2><div class="filterbar"><select id="filtroHistTipo" onchange="renderHist(ultimaHistorico)"><option value="">Todos os tipos</option><option>Entrada</option><option>Retirada</option><option>Transferência</option><option>Ajuste</option></select></div><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição da peça</th><th>Origem / Destino</th><th>Quantidade</th><th>Motivo</th><th>Responsável</th></tr></thead><tbody id="histBody"></tbody></table></div></div>
 </section>
 
 <section id="pecasAdmin" class="page hidden">
@@ -95,7 +96,7 @@ async function login(){
 async function logout(){await sb.auth.signOut();location.reload()}
 async function iniciar(u){
  usuario=u; loginView.classList.add('hidden');appView.classList.remove('hidden');
- const {data:p}=await sb.from('usuarios').select('nome,email,perfil,ativo').eq('id',u.id).maybeSingle();
+ const {data:p}=await sb.from('usuarios').select('nome,email,perfil,restaurante_id,ativo').eq('id',u.id).maybeSingle();
  if(!p||!p.ativo){await sb.auth.signOut();return msg('loginMsg','Usuário sem permissão ou inativo.')}
  perfilUsuario=p.perfil; userInfo.textContent=`${p.nome} • ${p.perfil}`;
  if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden');
@@ -106,7 +107,7 @@ async function carregar(){
   sb.from('restaurantes').select('*').order('codigo'),
   sb.from('pecas').select('*').order('codigo'),
   sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').order('nome'),
-  sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
+  sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome), responsavel:usuarios!movimentacoes_responsavel_id_fkey(nome,email)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
   sb.from('estoque_status').select('*')
  ]);
  restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];
@@ -116,14 +117,62 @@ async function carregar(){
  origem.innerHTML='<option value="">Origem</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
  destino.innerHTML='<option value="">Destino</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
  peca.innerHTML='<option value="">Peça</option>'+pecas.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.descricao}</option>`).join('');
+ pecaBusca.value='';
+ pecasLista.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<option value="${x.codigo} - ${x.descricao}"></option>`).join('');
  renderPecasAdmin();renderUsuariosAdmin();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
 }
 function renderEstoque(){
  const q=(buscaEstoque.value||'').toLowerCase(), fr=filtroRest.value, fs=filtroStatus.value;
  estoqueBody.innerHTML=estoque.filter(x=>`${x.restaurante} ${x.codigo_peca} ${x.descricao}`.toLowerCase().includes(q) && (!fr||x.restaurante===fr) && (!fs||x.status===fs))
- .slice(0,1000).map(x=>`<tr><td>${x.restaurante}</td><td>${x.codigo_peca}</td><td>${x.descricao}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='ATENÇÃO'?'att':'ok'}">${x.status}</span></td></tr>`).join('');
+ .slice(0,1000).map(x=>{
+   const rest=restaurantes.find(r=>r.codigo===x.restaurante);
+   const pecaObj=pecas.find(p=>p.codigo===x.codigo_peca);
+   const podeEditar=perfilUsuario==='Administrador'||perfilUsuario==='Gestor'||(perfilUsuario==='Operacional'&&!!usuario?.restaurante_id&&rest?.id===usuario.restaurante_id);
+   const acao=podeEditar
+     ? `<button style="width:auto;margin:0" onclick="editarEstoque('${rest?.id||''}','${pecaObj?.id||''}',${Number(x.estoque_atual)||0},'${String(x.restaurante||'').replace(/'/g,"\\'")}','${String(x.codigo_peca||'').replace(/'/g,"\\'")}')">Editar estoque</button>`
+     : '—';
+   return `<tr><td>${x.restaurante}</td><td>${x.codigo_peca}</td><td>${x.descricao}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='ATENÇÃO'?'att':'ok'}">${x.status}</span></td><td>${acao}</td></tr>`;
+ }).join('');
 }
-function renderHist(rows){const ft=filtroHistTipo?.value||'';histBody.innerHTML=rows.filter(x=>!ft||x.tipo===ft).map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('pt-BR')}</td><td>${x.tipo}</td><td>${x.pecas?.codigo||''}</td><td>${x.pecas?.descricao||'—'}</td><td>${x.origem?.codigo||'—'}${x.destino?.codigo?' → '+x.destino.codigo:''}</td><td>${x.quantidade}</td><td>${x.motivo||''}</td></tr>`).join('')} 
+async function editarEstoque(restauranteId, pecaId, estoqueAtual, restauranteCodigo, pecaCodigo){
+ if(!['Operacional','Gestor','Administrador'].includes(perfilUsuario)) return;
+ if(perfilUsuario==='Operacional' && restauranteId!==usuario?.restaurante_id) return alert('Acesso negado: o usuário Operacional só pode editar o estoque do restaurante ao qual está cadastrado.');
+ if(!restauranteId||!pecaId) return alert('Não foi possível identificar restaurante ou peça para o ajuste.');
+ const entrada=prompt(`Editar estoque\n${restauranteCodigo} — ${pecaCodigo}\nEstoque atual: ${estoqueAtual}\n\nInforme o novo estoque físico:`);
+ if(entrada===null) return;
+ const novo=Number(String(entrada).replace(',','.'));
+ if(!Number.isFinite(novo)||novo<0) return alert('Informe uma quantidade válida, igual ou maior que zero.');
+ const diferenca=novo-Number(estoqueAtual||0);
+ if(Math.abs(diferenca)<0.000001) return alert('O novo estoque é igual ao estoque atual. Nenhum ajuste foi registrado.');
+ const motivoBase=prompt(`Informe o motivo do ajuste (${diferenca>0?'+':''}${diferenca}):`);
+ if(motivoBase===null||!motivoBase.trim()) return alert('O motivo do ajuste é obrigatório.');
+ const {error}=await sb.from('movimentacoes').insert({tipo:'Ajuste',origem_id:restauranteId,destino_id:null,peca_id:pecaId,quantidade:diferenca,motivo:motivoBase.trim(),responsavel_id:usuario.id});
+ if(error) return alert('Erro ao ajustar estoque: '+error.message);
+ alert('Estoque ajustado com sucesso. O ajuste foi registrado no histórico.');
+ await carregar();
+}
+function renderHist(rows){const ft=filtroHistTipo?.value||'';histBody.innerHTML=rows.filter(x=>!ft||x.tipo===ft).map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('pt-BR')}</td><td>${x.tipo}</td><td>${x.pecas?.codigo||''}</td><td>${x.pecas?.descricao||'—'}</td><td>${x.origem?.codigo||'—'}${x.destino?.codigo?' → '+x.destino.codigo:''}</td><td>${x.quantidade}</td><td>${x.motivo||''}</td><td>${x.responsavel?.nome||x.responsavel?.email||'—'}</td></tr>`).join('')} 
+function sincronizaPecaBusca(){
+ const termo=(pecaBusca.value||'').trim().toLowerCase();
+ if(!termo){ peca.value=''; return; }
+ const exato=pecas.find(x=>x.ativo!==false && `${x.codigo} - ${x.descricao}`.toLowerCase()===termo);
+ const porCodigo=pecas.find(x=>x.ativo!==false && String(x.codigo||'').toLowerCase()===termo);
+ const porDescricao=pecas.find(x=>x.ativo!==false && String(x.descricao||'').toLowerCase()===termo);
+ const achado=exato||porCodigo||porDescricao;
+ peca.value=achado?achado.id:'';
+}
+
+pecaBusca.addEventListener('input', sincronizaPecaBusca);
+pecaBusca.addEventListener('change', sincronizaPecaBusca);
+pecaBusca.addEventListener('blur', ()=>{
+ sincronizaPecaBusca();
+ if(pecaBusca.value.trim() && !peca.value){
+   const termo=pecaBusca.value.trim().toLowerCase();
+   const achado=pecas.find(x=>x.ativo!==false && (String(x.codigo||'').toLowerCase().includes(termo)||String(x.descricao||'').toLowerCase().includes(termo)));
+   if(achado){ peca.value=achado.id; pecaBusca.value=`${achado.codigo} - ${achado.descricao}`; }
+ }
+});
+
 function ajustaMov(){
  const t=tipo.value; origem.style.display=t==='Entrada'?'none':'block'; destino.style.display=t==='Retirada'?'none':'block';
 }
