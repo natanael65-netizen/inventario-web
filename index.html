@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventário Web</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<style>
+:root{font-family:Arial,sans-serif}*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#20242a}
+header{background:#fff;border-bottom:1px solid #ddd;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+main{max-width:1200px;margin:auto;padding:20px}.card{background:#fff;border:1px solid #e2e2e2;border-radius:12px;padding:18px;margin-bottom:16px}
+.login{max-width:420px;margin:8vh auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{font-size:28px;font-weight:bold;margin-top:6px}input,select,button{width:100%;padding:11px;margin:6px 0;border:1px solid #ccc;border-radius:8px}
+button{cursor:pointer;font-weight:600}.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.nav button{width:auto}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #eee;font-size:14px}
+.hidden{display:none}.msg{padding:10px;border-radius:8px;margin:8px 0;background:#f0f0f0}.danger{font-weight:bold}.attention{font-weight:bold}.filterbar{display:flex;gap:10px;flex-wrap:wrap}.filterbar>*{flex:1;min-width:180px}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}.ok{background:#e8f5e9}.att{background:#fff3cd}.crit{background:#fde2e2}
+@media(max-width:700px){table{display:block;overflow:auto}header{align-items:flex-start;gap:10px;flex-direction:column}}
+</style>
+</head>
+<body><div style="position:fixed;top:6px;right:10px;font-size:11px;opacity:.65;z-index:9999">Versão V27 — alteração de senha disponível para todos os usuários</div>
+<section id="loginView" class="login card">
+<h1>Inventário Web</h1><p>Acesso ao sistema de peças e equipamentos</p>
+<input id="email" type="email" placeholder="E-mail">
+<input id="password" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
+<div id="loginMsg" class="msg hidden"></div>
+</section>
+
+<section id="appView" class="hidden">
+<header><div><strong>Inventário Web</strong><div id="userInfo"></div></div><button style="width:auto" onclick="logout()">Sair</button></header>
+<main>
+<div class="nav">
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('estoque')">Estoque</button>
+<button onclick="showPage('mov')">Movimentação</button>
+<button onclick="showPage('historico')">Histórico</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasAdmin')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button></span>
+</div>
+
+<section id="senha" class="page hidden">
+<div class="card"><h2>Alterar minha senha</h2>
+<div class="grid"><input id="senhaAtual" type="password" placeholder="Senha atual"><input id="novaSenha" type="password" placeholder="Nova senha (mín. 6 caracteres)"><input id="confirmaSenha" type="password" placeholder="Confirmar nova senha"></div>
+<button onclick="alterarSenha()">Salvar nova senha</button><div id="senhaMsg" class="msg hidden"></div>
+<p><small>Informe a senha atual e escolha uma nova senha pessoal com pelo menos 6 caracteres.</small></p></div>
+</section>
+<section id="dashboard" class="page">
+<div class="grid">
+<div class="card">Peças cadastradas<div id="kPecas" class="kpi">-</div></div>
+<div class="card">Restaurantes<div id="kRest" class="kpi">-</div></div>
+<div class="card">Movimentações<div id="kMov" class="kpi">-</div></div>
+<div class="card">Itens críticos<div id="kCrit" class="kpi">-</div></div>
+</div>
+</section>
+
+<section id="estoque" class="page hidden">
+<div class="card"><h2>Estoque atual</h2>
+<div class="filterbar"><input id="buscaEstoque" placeholder="Buscar código, descrição ou restaurante" oninput="renderEstoque()"><select id="filtroRest" onchange="renderEstoque()"><option value="">Todos os restaurantes</option></select><select id="filtroStatus" onchange="renderEstoque()"><option value="">Todos os status</option><option>OK</option><option>ATENÇÃO</option><option>CRÍTICO</option></select></div>
+<div style="overflow:auto"><table><thead><tr><th>Restaurante</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th></tr></thead><tbody id="estoqueBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="mov" class="page hidden">
+<div class="card"><h2>Nova movimentação</h2>
+<select id="tipo" onchange="ajustaMov()"><option>Entrada</option><option>Retirada</option><option>Transferência</option></select>
+<select id="origem"></select><select id="destino"></select><select id="peca"></select>
+<input id="quantidade" type="number" min="0.01" step="0.01" placeholder="Quantidade">
+<input id="motivo" placeholder="Motivo / observação">
+<button onclick="salvarMov()">Registrar movimentação</button><div id="movMsg" class="msg hidden"></div>
+</div>
+</section>
+
+<section id="historico" class="page hidden">
+<div class="card"><h2>Histórico</h2><div class="filterbar"><select id="filtroHistTipo" onchange="renderHist(ultimaHistorico)"><option value="">Todos os tipos</option><option>Entrada</option><option>Retirada</option><option>Transferência</option><option>Ajuste</option></select></div><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição da peça</th><th>Origem / Destino</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody id="histBody"></tbody></table></div></div>
+</section>
+
+<section id="pecasAdmin" class="page hidden">
+<div class="card"><h2>Cadastro de Itens</h2><div class="grid"><input id="pCodigo" placeholder="Código"><input id="pDescricao" placeholder="Descrição"><input id="pEquipamento" placeholder="Equipamento"><input id="pIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"><input id="pCriticidade" placeholder="Criticidade"><input id="pUnidade" placeholder="Unidade" value="UN"></div><button onclick="salvarPeca()">Cadastrar item</button><div id="pecaMsg" class="msg hidden"></div><h3>Itens cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Descrição</th><th>Equipamento</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="pecasAdminBody"></tbody></table></div></div>
+</section>
+
+<section id="usuariosAdmin" class="page hidden">
+<div class="card"><h2>Cadastro de Usuários</h2><div class="grid"><input id="uNome" placeholder="Nome"><input id="uEmail" type="email" placeholder="E-mail"><input id="uSenha" type="password" placeholder="Senha inicial (mín. 6 caracteres)"><select id="uPerfil"><option>Operacional</option><option>Gestor</option><option>Administrador</option></select><select id="uRestaurante"><option value="">Restaurante (opcional)</option></select></div><button onclick="salvarUsuario()">Cadastrar usuário</button><div id="usuarioMsg" class="msg hidden"></div><p><small>O Administrador cria a conta de login e a senha inicial. O usuário receberá acesso conforme o perfil selecionado.</small></p><h3>Usuários cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ação</th></tr></thead><tbody id="usuariosAdminBody"></tbody></table></div></div></section>
+</main></section>
+
+<script>
+const cfg=window.INVENTARIO_CONFIG;
+const sb=supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY);
+let estoque=[], restaurantes=[], pecas=[], usuariosAdmin=[], usuario=null, perfilUsuario=null, ultimaHistorico=[];
+
+function msg(id,text){let e=document.getElementById(id);e.textContent=text;e.classList.remove('hidden')}
+async function login(){
+ const {data,error}=await sb.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+ if(error)return msg('loginMsg',error.message);
+ await iniciar(data.user);
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function iniciar(u){
+ usuario=u; loginView.classList.add('hidden');appView.classList.remove('hidden');
+ const {data:p}=await sb.from('usuarios').select('nome,email,perfil,ativo').eq('id',u.id).maybeSingle();
+ if(!p||!p.ativo){await sb.auth.signOut();return msg('loginMsg','Usuário sem permissão ou inativo.')}
+ perfilUsuario=p.perfil; userInfo.textContent=`${p.nome} • ${p.perfil}`;
+ if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden');
+ await carregar();
+}
+async function carregar(){
+ const [r,p,u,m,e]=await Promise.all([
+  sb.from('restaurantes').select('*').order('codigo'),
+  sb.from('pecas').select('*').order('codigo'),
+  sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').order('nome'),
+  sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
+  sb.from('estoque_status').select('*')
+ ]);
+ restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];
+ kRest.textContent=restaurantes.length;kPecas.textContent=pecas.length;kMov.textContent=m.count??(m.data||[]).length;
+ kCrit.textContent=estoque.filter(x=>x.status==='CRÍTICO').length;
+ filtroRest.innerHTML='<option value="">Todos os restaurantes</option>'+restaurantes.map(x=>`<option value="${x.codigo}">${x.codigo}</option>`).join('');
+ origem.innerHTML='<option value="">Origem</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ destino.innerHTML='<option value="">Destino</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ peca.innerHTML='<option value="">Peça</option>'+pecas.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.descricao}</option>`).join('');
+ renderPecasAdmin();renderUsuariosAdmin();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+}
+function renderEstoque(){
+ const q=(buscaEstoque.value||'').toLowerCase(), fr=filtroRest.value, fs=filtroStatus.value;
+ estoqueBody.innerHTML=estoque.filter(x=>`${x.restaurante} ${x.codigo_peca} ${x.descricao}`.toLowerCase().includes(q) && (!fr||x.restaurante===fr) && (!fs||x.status===fs))
+ .slice(0,1000).map(x=>`<tr><td>${x.restaurante}</td><td>${x.codigo_peca}</td><td>${x.descricao}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='ATENÇÃO'?'att':'ok'}">${x.status}</span></td></tr>`).join('');
+}
+function renderHist(rows){const ft=filtroHistTipo?.value||'';histBody.innerHTML=rows.filter(x=>!ft||x.tipo===ft).map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('pt-BR')}</td><td>${x.tipo}</td><td>${x.pecas?.codigo||''}</td><td>${x.pecas?.descricao||'—'}</td><td>${x.origem?.codigo||'—'}${x.destino?.codigo?' → '+x.destino.codigo:''}</td><td>${x.quantidade}</td><td>${x.motivo||''}</td></tr>`).join('')} 
+function ajustaMov(){
+ const t=tipo.value; origem.style.display=t==='Entrada'?'none':'block'; destino.style.display=t==='Retirada'?'none':'block';
+}
+async function salvarMov(){
+ const t=tipo.value,q=Number(quantidade.value),pid=peca.value,mot=motivo.value.trim();
+ if(!pid||!q||q<=0||!mot)return msg('movMsg','Preencha peça, quantidade e motivo.');
+ if(t==='Entrada'&&!destino.value)return msg('movMsg','Selecione o restaurante de destino.');
+ if(t==='Retirada'&&!origem.value)return msg('movMsg','Selecione o restaurante de origem.');
+ if(t==='Transferência'&&(!origem.value||!destino.value||origem.value===destino.value))return msg('movMsg','Selecione origem e destino diferentes.');
+ const row={tipo:t,peca_id:pid,quantidade:q,motivo:mot,responsavel_id:usuario.id,
+  origem_id:t==='Entrada'?null:origem.value,destino_id:t==='Retirada'?null:destino.value};
+ const {error}=await sb.from('movimentacoes').insert(row);
+ if(error)return msg('movMsg','Erro: '+error.message);
+ msg('movMsg','Movimentação registrada com sucesso.');quantidade.value='';motivo.value='';await carregar();
+}
+async function salvarPeca(){
+ if(perfilUsuario!=='Administrador') return msg('pecaMsg','Acesso permitido somente ao Administrador.');
+ const codigo=pCodigo.value.trim(), descricao=pDescricao.value.trim(), equipamento=pEquipamento.value.trim();
+ const ideal=pIdeal.value===''?null:Number(pIdeal.value), criticidade=pCriticidade.value.trim()||null, unidade=pUnidade.value.trim()||'UN';
+ if(!codigo||!descricao) return msg('pecaMsg','Código e descrição são obrigatórios.');
+ const {error}=await sb.from('pecas').insert({codigo,descricao,equipamento:equipamento||null,quantidade_ideal:ideal,criticidade,unidade,ativo:true});
+ if(error) return msg('pecaMsg','Erro: '+error.message);
+ msg('pecaMsg','Item cadastrado com sucesso.'); ['pCodigo','pDescricao','pEquipamento','pIdeal','pCriticidade'].forEach(id=>document.getElementById(id).value=''); pUnidade.value='UN'; await carregar();
+}
+async function salvarUsuario(){
+ if(perfilUsuario!=='Administrador') return msg('usuarioMsg','Acesso permitido somente ao Administrador.');
+ const nome=uNome.value.trim(), emailNovo=uEmail.value.trim(), senha=uSenha.value, perfil=uPerfil.value, restaurante_id=uRestaurante.value||null;
+ if(!nome||!emailNovo||!senha) return msg('usuarioMsg','Nome, e-mail e senha são obrigatórios.');
+ if(senha.length<6) return msg('usuarioMsg','A senha deve ter pelo menos 6 caracteres.');
+ const {data,error}=await sb.functions.invoke('admin-create-user',{body:{nome,email:emailNovo,senha,perfil,restaurante_id}});
+ if(error) return msg('usuarioMsg','Erro: '+(error.message||'não foi possível criar o usuário.'));
+ if(data?.error) return msg('usuarioMsg','Erro: '+data.error);
+ msg('usuarioMsg','Usuário criado com sucesso. O login já está habilitado.'); uNome.value='';uEmail.value='';uSenha.value='';uPerfil.value='Operacional';uRestaurante.value='';
+}
+
+function renderPecasAdmin(){
+ if(perfilUsuario!=='Administrador') return;
+ pecasAdminBody.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<tr><td>${x.codigo||''}</td><td>${x.descricao||''}</td><td>${x.equipamento||'—'}</td><td>${x.quantidade_ideal??'—'}</td><td><span class="badge ok">Ativo</span></td><td><button onclick="excluirPeca('${x.id}','${String(x.codigo||'').replace(/'/g,"\\'")}')">Excluir</button></td></tr>`).join('');
+}
+function renderUsuariosAdmin(){
+ if(perfilUsuario!=='Administrador') return;
+ usuariosAdminBody.innerHTML=usuariosAdmin.filter(x=>x.ativo!==false).map(x=>`<tr><td>${x.nome||''}</td><td>${x.email||''}</td><td>${x.perfil||''}</td><td><span class="badge ok">Ativo</span></td><td><button onclick="excluirUsuario('${x.id}','${String(x.nome||'').replace(/'/g,"\\'")}')">Excluir</button></td></tr>`).join('');
+}
+async function excluirPeca(id,codigo){
+ if(perfilUsuario!=='Administrador') return msg('pecaMsg','Acesso permitido somente ao Administrador.');
+ if(!confirm(`Excluir o item ${codigo}? O item será desativado e o histórico será preservado.`)) return;
+ const {error}=await sb.from('pecas').update({ativo:false}).eq('id',id);
+ if(error) return msg('pecaMsg','Erro ao excluir item: '+error.message);
+ msg('pecaMsg','Item excluído com sucesso.'); await carregar();
+}
+async function excluirUsuario(id,nome){
+ if(perfilUsuario!=='Administrador') return msg('usuarioMsg','Acesso permitido somente ao Administrador.');
+ if(!confirm(`Excluir o usuário ${nome}? O acesso será bloqueado e o histórico será preservado.`)) return;
+ const {data,error}=await sb.functions.invoke('admin-delete-user-v2',{body:{user_id:id}});
+ if(error) return msg('usuarioMsg','Erro ao excluir usuário: '+(error.message||'não foi possível excluir.'));
+ if(data?.error) return msg('usuarioMsg','Erro: '+data.error);
+ msg('usuarioMsg','Usuário desativado com sucesso.'); await carregar();
+}
+
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+(async()=>{const {data}=await sb.auth.getSession();if(data.session)await iniciar(data.session.user)})();
+async function alterarSenha(){
+ const atual=senhaAtual.value, nova=novaSenha.value, confirma=confirmaSenha.value;
+ if(!atual||!nova||!confirma) return msg('senhaMsg','Preencha a senha atual, a nova senha e a confirmação.');
+ if(nova.length<6) return msg('senhaMsg','A nova senha deve ter pelo menos 6 caracteres.');
+ if(nova!==confirma) return msg('senhaMsg','A confirmação da senha não confere.');
+ if(atual===nova) return msg('senhaMsg','A nova senha deve ser diferente da senha atual.');
+ const {data,error}=await sb.functions.invoke('alterar-senha-v2',{body:{senha_atual:atual,nova_senha:nova}});
+ if(error) return msg('senhaMsg','Erro ao alterar senha: '+(error.message||'não foi possível alterar.'));
+ if(data?.error) return msg('senhaMsg','Erro: '+data.error);
+ msg('senhaMsg','Senha alterada com sucesso.'); senhaAtual.value='';novaSenha.value='';confirmaSenha.value='';
+}
+</script>
+</body></html>
