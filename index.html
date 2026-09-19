@@ -149,7 +149,7 @@ async function carregar(){
   sb.from('estoque_status').select('*'),sb.from('equipamentos').select('*').order('codigo'),sb.from('pirometros_alertas').select('*').order('data_vencimento')
  ]);
  const falhas=[r,p,u,m,e,eq,pr].filter(x=>x.error); if(falhas.length){ console.error('Falha ao carregar dados',falhas.map(x=>x.error)); } restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];equipamentos=eq.data||[];pirometros=pr.data||[];
- kRest.textContent=restaurantes.length;kPecas.textContent=pecas.length;kMov.textContent=m.count??(m.data||[]).length;
+ kRest.textContent=restaurantes.length;kPecas.textContent=pecas.filter(x=>x.ativo!==false).length;kMov.textContent=m.count??(m.data||[]).length;
  kCrit.textContent=estoque.filter(x=>x.status==='CRÍTICO').length;
  kExcesso.textContent=estoque.filter(x=>x.status==='EXCESSO').length;
  kPiroVencido.textContent=pirometros.filter(x=>x.status==='VENCIDO').length;
@@ -249,8 +249,8 @@ function renderPirometros(){
 }
 function fmtData(v){if(!v)return '—';const [y,m,d]=String(v).slice(0,10).split('-');return `${d}/${m}/${y}`;}
 function renderDashboardAlertas(){
- const crit=estoque.filter(x=>x.status==='CRÍTICO');
- const exc=estoque.filter(x=>x.status==='EXCESSO');
+ const crit=estoque.filter(x=>x.status==='CRÍTICO' && pecas.some(p=>p.id===x.peca_id && p.ativo!==false));
+ const exc=estoque.filter(x=>x.status==='EXCESSO' && pecas.some(p=>p.id===x.peca_id && p.ativo!==false));
  const pa=pirometros.filter(x=>x.status==='ALERTA'||x.status==='VENCIDO');
  dashCritCount.textContent=crit.length; dashExcCount.textContent=exc.length; dashPiroCount.textContent=pa.length;
  dashCritList.innerHTML=crit.slice(0,5).map(x=>`<li><span class="signal red">!</span><span><b>${x.restaurante}</b> — ${x.codigo_peca}<br><small>${x.estoque_atual} de ${x.quantidade_ideal} ideal</small></span></li>`).join('') || '<li class="alert-empty">✓ Nenhum item crítico.</li>';
@@ -287,14 +287,22 @@ async function salvarPeca(){
 }
 function renderPecasCadastro(){
  if(!['Gestor','Administrador'].includes(perfilUsuario))return;
- pecasCadastroBody.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<tr><td>${x.codigo||''}</td><td>${x.descricao||''}</td><td>${x.equipamento||'—'}</td><td>${x.quantidade_ideal??'—'}</td><td>${x.criticidade||'—'}</td><td>${x.unidade||'UN'}</td><td><span class="badge ok">Ativo</span></td><td><button style="width:auto" onclick="desativarPeca('${x.id}','${String(x.codigo||'').replace(/'/g,"\'")}')">Desativar</button></td></tr>`).join('')||'<tr><td colspan="8">Nenhum item cadastrado.</td></tr>';
+ pecasCadastroBody.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<tr><td>${x.codigo||''}</td><td>${x.descricao||''}</td><td>${x.equipamento||'—'}</td><td>${x.quantidade_ideal??'—'}</td><td>${x.criticidade||'—'}</td><td>${x.unidade||'UN'}</td><td><span class="badge ok">Ativo</span></td><td><button style="width:auto" onclick="excluirPeca('${x.id}','${String(x.codigo||'').replace(/'/g,"\'")}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan="8">Nenhum item cadastrado.</td></tr>';
 }
-async function desativarPeca(id,codigo){
+async function excluirPeca(id,codigo){
  if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('pecaMsg','Acesso permitido somente ao Gestor ou Administrador.');
- if(!confirm(`Desativar o item ${codigo}? O histórico será preservado.`))return;
- const {error}=await sb.from('pecas').update({ativo:false}).eq('id',id);
- if(error)return msg('pecaMsg','Erro ao desativar item: '+error.message);
- msg('pecaMsg','Item desativado com sucesso.');await carregar();
+ if(!confirm(`Excluir definitivamente o item ${codigo} da base de dados? Esta ação não pode ser desfeita.`))return;
+ const [{count:movCount,error:movError},{count:eqCount,error:eqError}]=await Promise.all([
+  sb.from('movimentacoes').select('id',{count:'exact',head:true}).eq('peca_id',id),
+  sb.from('equipamento_pecas').select('peca_id',{count:'exact',head:true}).eq('peca_id',id)
+ ]);
+ if(movError||eqError)return msg('pecaMsg','Não foi possível verificar vínculos do item.');
+ if((movCount||0)>0)return msg('pecaMsg',`Não é possível excluir ${codigo}: existem ${movCount} movimentação(ões) no histórico. Para preservar o histórico, o item deve permanecer na base.`);
+ if((eqCount||0)>0)return msg('pecaMsg',`Não é possível excluir ${codigo}: o item está associado a ${eqCount} equipamento(s). Remova a associação primeiro.`);
+ const {error}=await sb.from('pecas').delete().eq('id',id);
+ if(error)return msg('pecaMsg','Erro ao excluir item: '+error.message);
+ msg('pecaMsg','Item excluído definitivamente da base de dados.');
+ await carregar();
 }
 
 async function salvarEquipamento(){if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('equipMsg','Acesso permitido somente ao Gestor ou Administrador.');const codigo=eCodigo.value.trim(),nome=eNome.value.trim(),fabricante=eFabricante.value.trim(),modelo=eModelo.value.trim(),patrimonio=ePatrimonio.value.trim(),restaurante_id=eRestaurante.value||null;if(!codigo||!nome)return msg('equipMsg','Código e nome são obrigatórios.');const {error}=await sb.from('equipamentos').insert({codigo,nome,fabricante:fabricante||null,modelo:modelo||null,patrimonio:patrimonio||null,restaurante_id,ativo:true});if(error)return msg('equipMsg','Erro: '+error.message);await carregar();}
