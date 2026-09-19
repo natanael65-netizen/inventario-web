@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Inventário Web</title>
+<title>Inventário Cahetel</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
 <style>
@@ -15,12 +15,27 @@ main{max-width:1200px;margin:auto;padding:20px}.card{background:#fff;border:1px 
 button{cursor:pointer;font-weight:600}.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.nav button{width:auto}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #eee;font-size:14px}
 .hidden{display:none}.msg{padding:10px;border-radius:8px;margin:8px 0;background:#f0f0f0}.danger{font-weight:bold}.attention{font-weight:bold}.filterbar{display:flex;gap:10px;flex-wrap:wrap}.filterbar>*{flex:1;min-width:180px}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}.ok{background:#e8f5e9}.att{background:#fff3cd}.crit{background:#fde2e2}
-@media(max-width:700px){table{display:block;overflow:auto}header{align-items:flex-start;gap:10px;flex-direction:column}}
+
+.alert-kpis{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+.alert-kpi{position:relative;overflow:hidden;border-radius:14px;padding:16px;border:1px solid #e5e5e5;background:#fff;box-shadow:0 7px 20px rgba(0,0,0,.06);min-height:105px}
+.alert-kpi .ak-icon{font-size:25px;line-height:1}.alert-kpi .ak-label{font-size:13px;font-weight:700;margin-top:8px}.alert-kpi .ak-value{font-size:30px;font-weight:800;margin-top:4px}.alert-kpi .ak-bar{height:6px;border-radius:99px;background:rgba(0,0,0,.08);margin-top:10px;overflow:hidden}.alert-kpi .ak-bar span{display:block;height:100%;border-radius:99px}
+.alert-kpi.red{border-color:#f2b7b7;background:linear-gradient(135deg,#fff,#fff0f0)}.alert-kpi.red .ak-value{color:#d91e18}.alert-kpi.red .ak-bar span{background:#d91e18;width:82%}
+.alert-kpi.yellow{border-color:#f0d27a;background:linear-gradient(135deg,#fff,#fff8df)}.alert-kpi.yellow .ak-value{color:#b77b00}.alert-kpi.yellow .ak-bar span{background:#ffc72c;width:62%}
+.alert-kpi.green{border-color:#b9dfc7;background:linear-gradient(135deg,#fff,#edfff2)}.alert-kpi.green .ak-value{color:#138a4b}.alert-kpi.green .ak-bar span{background:#19a85b;width:88%}
+.alert-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.alert-panel{border-radius:16px;padding:18px;background:#fff;border:1px solid #e3e3e3;box-shadow:0 7px 20px rgba(0,0,0,.06);position:relative;overflow:hidden}
+.alert-panel:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}.alert-panel.critical{background:linear-gradient(135deg,#fff,#fff0f0);border-color:#efb4b4}.alert-panel.critical:before{background:#d91e18}.alert-panel.excess{background:linear-gradient(135deg,#fff,#fff9df);border-color:#efd37b}.alert-panel.excess:before{background:#ffc72c}.alert-panel.piro{background:linear-gradient(135deg,#fff,#fff9df);border-color:#efd37b}.alert-panel.piro:before{background:#f2a900}
+.alert-panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.alert-title{font-size:18px;font-weight:800}.alert-count{font-size:28px;font-weight:900;padding:6px 13px;border-radius:12px}.critical .alert-count{background:#d91e18;color:#fff}.excess .alert-count,.piro .alert-count{background:#ffc72c;color:#171717}
+.alert-sub{margin:5px 0 12px;font-size:13px;color:#555}.alert-list{list-style:none;padding:0;margin:0}.alert-list li{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13px;border-bottom:1px dashed rgba(0,0,0,.09)}.alert-list li:last-child{border-bottom:0}.signal{width:23px;height:23px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 23px}.signal.red{background:#d91e18;color:#fff}.signal.yellow{background:#ffc72c;color:#171717}.signal.green{background:#19a85b;color:#fff}.alert-empty{padding:10px 0;color:#18864a;font-weight:700}.alert-footer{margin-top:10px;font-size:12px;font-weight:700}.alert-panel.critical .alert-footer{color:#c51612}.alert-panel.excess .alert-footer,.alert-panel.piro .alert-footer{color:#8b6200}
+.alert-table-card{margin-top:0}.alert-table-title{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800}.alert-table-title .dot{width:10px;height:10px;border-radius:50%;background:#d91e18}.alert-table-title.yellow .dot{background:#ffc72c}.alert-table-title.green .dot{background:#19a85b}
+@media(max-width:1100px){.alert-kpis{grid-template-columns:repeat(4,1fr)}.alert-panel-grid{grid-template-columns:1fr}}
+@media(max-width:700px){table{display:block;overflow:auto}header{align-items:flex-start;gap:10px;flex-direction:column}.alert-kpis{grid-template-columns:repeat(2,1fr)}}
+.login{position:relative;overflow:hidden;background:#fff;padding:34px 30px 30px;box-shadow:0 18px 50px rgba(0,0,0,.12);border-top:7px solid #ffc72c}.login:before{content:"";position:absolute;inset:0;right:52%;background:url("./arches.png") center left/cover no-repeat;opacity:.16;pointer-events:none}.login>*{position:relative}.brand-logo{width:58px;height:58px;object-fit:cover;border-radius:50%;box-shadow:0 5px 14px rgba(0,0,0,.16);vertical-align:middle;margin-right:10px}.brand-title{display:flex;align-items:center;margin-bottom:10px}.brand-title h1{margin:0;font-size:29px}.brand-sub{margin:0 0 18px;color:#666}.app-header{position:relative;overflow:hidden;background:#fff}.app-header:after{content:"";position:absolute;right:0;top:0;width:55%;height:100%;background:url("./stripes.png") right center/cover no-repeat;opacity:.8;pointer-events:none}.app-header>*{position:relative;z-index:1}.header-brand{display:flex;align-items:center;gap:10px}.header-brand img{width:48px;height:48px;border-radius:50%;object-fit:cover}.header-brand strong{font-size:22px}.brand-btn{background:#ffc72c;border-color:#e8b400;color:#171717}.nav button{border:0;background:#fff}.nav button:hover{background:#fff4cc}.nav button:first-child{background:#d91e18;color:#fff}.nav{padding:8px;background:#fff;border-radius:12px;box-shadow:0 5px 18px rgba(0,0,0,.06)}.card{box-shadow:0 6px 18px rgba(0,0,0,.05)}
 </style>
 </head>
-<body><div style="position:fixed;top:6px;right:10px;font-size:11px;opacity:.65;z-index:9999">Versão V31 — busca de peças + responsável pelo lançamento</div>
+<body><div style="position:fixed;top:6px;right:10px;font-size:11px;opacity:.65;z-index:9999">Versão V37 — Dashboard de alertas visual + Identidade Cahetel</div>
 <section id="loginView" class="login card">
-<h1>Inventário Web</h1><p>Acesso ao sistema de peças e equipamentos</p>
+<div class="brand-title"><img class="brand-logo" src="./logo.png" alt="Marca"><h1>Inventário Cahetel</h1></div><p class="brand-sub">Gestão de peças e equipamentos</p>
 <input id="email" type="email" placeholder="E-mail">
 <input id="password" type="password" placeholder="Senha">
 <button onclick="login()">Entrar</button>
@@ -28,13 +43,13 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 </section>
 
 <section id="appView" class="hidden">
-<header><div><strong>Inventário Web</strong><div id="userInfo"></div></div><button style="width:auto" onclick="logout()">Sair</button></header>
+<header class="app-header"><div class="header-brand"><img src="./logo.png" alt="Marca"><div><strong>Inventário Cahetel</strong><div id="userInfo"></div></div></div><button class="brand-btn" style="width:auto" onclick="logout()">Sair</button></header>
 <main>
 <div class="nav">
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('estoque')">Estoque</button>
 <button onclick="showPage('mov')">Movimentação</button>
-<button onclick="showPage('historico')">Histórico</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasAdmin')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button></span>
+<button onclick="showPage('historico')">Histórico</button><button id="piroNav" class="hidden" onclick="showPage('pirimetro')">Pirômetro</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasAdmin')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button></span><span id="gestorNav" class="hidden"><button onclick="showPage('pecasGestor')">Novos Itens</button><button onclick="showPage('equipamentosGestor')">Equipamentos</button><button onclick="showPage('restaurantesGestor')">Pontos de Venda</button></span>
 </div>
 
 <section id="senha" class="page hidden">
@@ -44,40 +59,64 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <p><small>Informe a senha atual e escolha uma nova senha pessoal com pelo menos 6 caracteres.</small></p></div>
 </section>
 <section id="dashboard" class="page">
+<div class="alert-kpis">
+<div class="alert-kpi"><div class="ak-icon">📦</div><div class="ak-label">Peças cadastradas</div><div id="kPecas" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi"><div class="ak-icon">🏪</div><div class="ak-label">Pontos de venda</div><div id="kRest" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi"><div class="ak-icon">↔️</div><div class="ak-label">Movimentações</div><div id="kMov" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi red"><div class="ak-icon">🚨</div><div class="ak-label">Itens críticos</div><div id="kCrit" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi yellow"><div class="ak-icon">📚</div><div class="ak-label">Itens em excesso</div><div id="kExcesso" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi green"><div class="ak-icon">🌡️</div><div class="ak-label">Pirômetros OK</div><div id="kPiroOk" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+<div class="alert-kpi red"><div class="ak-icon">⛔</div><div class="ak-label">Pirômetros vencidos</div><div id="kPiroVencido" class="ak-value">-</div><div class="ak-bar"><span></span></div></div>
+</div>
+<div class="alert-panel-grid">
+<div class="alert-panel critical"><div class="alert-panel-head"><div><div class="alert-title">🚨 ATENÇÃO</div><div class="alert-sub">Itens abaixo de 50% do estoque ideal.</div></div><div id="dashCritCount" class="alert-count">0</div></div><ul id="dashCritList" class="alert-list"></ul><div class="alert-footer">● Ação recomendada: verificar necessidade de reposição.</div></div>
+<div class="alert-panel excess"><div class="alert-panel-head"><div><div class="alert-title">⚠️ ESTOQUE EM EXCESSO</div><div class="alert-sub">Itens acima de 130% do estoque ideal.</div></div><div id="dashExcCount" class="alert-count">0</div></div><ul id="dashExcList" class="alert-list"></ul><div class="alert-footer">● Sugestão: avaliar transferência entre pontos de venda.</div></div>
+<div class="alert-panel piro"><div class="alert-panel-head"><div><div class="alert-title">🌡️ PIRÔMETROS</div><div class="alert-sub">Aferições próximas do vencimento ou vencidas.</div></div><div id="dashPiroCount" class="alert-count">0</div></div><ul id="dashPiroList" class="alert-list"></ul><div class="alert-footer">● Realizar aferição dentro do prazo.</div></div>
+</div>
 <div class="grid">
-<div class="card">Peças cadastradas<div id="kPecas" class="kpi">-</div></div>
-<div class="card">Restaurantes<div id="kRest" class="kpi">-</div></div>
-<div class="card">Movimentações<div id="kMov" class="kpi">-</div></div>
-<div class="card">Itens críticos<div id="kCrit" class="kpi">-</div></div>
+<div class="card alert-table-card"><div class="alert-table-title"><span class="dot"></span>Itens críticos no estoque</div><div id="dashboardEstoqueAlertas"></div></div>
+<div class="card alert-table-card"><div class="alert-table-title yellow"><span class="dot"></span>Itens em excesso</div><div id="dashboardEstoqueExcesso"></div></div>
+<div class="card alert-table-card"><div class="alert-table-title yellow"><span class="dot"></span>Aferição de Pirômetros</div><div id="dashboardPiroAlertas"></div></div>
 </div>
 </section>
 
 <section id="estoque" class="page hidden">
 <div class="card"><h2>Estoque atual</h2>
 <p><small>Usuários Operacional, Gestor e Administrador podem editar o estoque por meio de ajuste. O sistema registra a diferença como movimentação do tipo Ajuste e preserva o histórico.</small></p>
-<div class="filterbar"><input id="buscaEstoque" placeholder="Buscar código, descrição ou restaurante" oninput="renderEstoque()"><select id="filtroRest" onchange="renderEstoque()"><option value="">Todos os restaurantes</option></select><select id="filtroStatus" onchange="renderEstoque()"><option value="">Todos os status</option><option>OK</option><option>ATENÇÃO</option><option>CRÍTICO</option></select></div>
+<div class="filterbar"><input id="buscaEstoque" placeholder="Buscar código, descrição ou restaurante" oninput="renderEstoque()"><select id="filtroRest" onchange="renderEstoque()"><option value="">Todos os restaurantes</option></select><select id="filtroStatus" onchange="renderEstoque()"><option value="">Todos os status</option><option>OK</option><option>EXCESSO</option><option>CRÍTICO</option></select></div>
 <div style="overflow:auto"><table><thead><tr><th>Restaurante</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="estoqueBody"></tbody></table></div>
 </div>
 </section>
 
 <section id="mov" class="page hidden">
 <div class="card"><h2>Nova movimentação</h2>
-<select id="tipo" onchange="ajustaMov()"><option>Entrada</option><option>Retirada</option><option>Transferência</option></select>
+<select id="tipo" onchange="ajustaMov()"><option>Entrada</option><option>Saída</option><option>Transferência</option></select>
 <select id="origem"></select><select id="destino"></select><div class="peca-search-wrap"><input id="pecaBusca" list="pecasLista" placeholder="Peça — digite código ou nome" autocomplete="off"><datalist id="pecasLista"></datalist><select id="peca" class="hidden"></select></div>
-<input id="quantidade" type="number" min="0.01" step="0.01" placeholder="Quantidade">
+<select id="equipamentoMov"><option value="">Equipamento (opcional)</option></select><input id="quantidade" type="number" min="0.01" step="0.01" placeholder="Quantidade">
 <input id="motivo" placeholder="Motivo / observação">
 <button onclick="salvarMov()">Registrar movimentação</button><div id="movMsg" class="msg hidden"></div>
 </div>
 </section>
 
 <section id="historico" class="page hidden">
-<div class="card"><h2>Histórico</h2><div class="filterbar"><select id="filtroHistTipo" onchange="renderHist(ultimaHistorico)"><option value="">Todos os tipos</option><option>Entrada</option><option>Retirada</option><option>Transferência</option><option>Ajuste</option></select></div><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição da peça</th><th>Origem / Destino</th><th>Quantidade</th><th>Motivo</th><th>Responsável</th></tr></thead><tbody id="histBody"></tbody></table></div></div>
+<div class="card"><h2>Histórico</h2><div class="filterbar"><input id="filtroHistBusca" placeholder="Buscar peça, restaurante, motivo ou responsável" oninput="renderHist(ultimaHistorico)"><select id="filtroHistTipo" onchange="renderHist(ultimaHistorico)"><option value="">Todos os tipos</option><option>Entrada</option><option>Saída</option><option>Transferência</option><option>Ajuste</option></select><select id="filtroHistRest" onchange="renderHist(ultimaHistorico)"><option value="">Todos os pontos de venda</option></select><select id="filtroHistResp" onchange="renderHist(ultimaHistorico)"><option value="">Todos os responsáveis</option></select><input id="filtroHistDe" type="date" onchange="renderHist(ultimaHistorico)"><input id="filtroHistAte" type="date" onchange="renderHist(ultimaHistorico)"><button style="max-width:130px" onclick="limparFiltrosHist()">Limpar filtros</button></div><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição da peça</th><th>Origem / Destino</th><th>Quantidade</th><th>Motivo</th><th>Responsável</th></tr></thead><tbody id="histBody"></tbody></table></div></div>
+</section>
+
+<section id="pirimetro" class="page hidden">
+<div class="card"><h2>Controle de Pirômetros</h2>
+<p><small>Cadastre o equipamento de medição, local de uso, número de série e aferição. O vencimento é calculado automaticamente para 6 meses após a data de aferição. O Dashboard sinaliza alerta com 30 dias de antecedência.</small></p>
+<div class="grid"><select id="piLocalizacao"><option value="">Localização — Ponto de venda</option></select><select id="piFabricante"><option value="">Fabricante / modelo</option><option>Testo Pirômetro</option><option>Testo Analisador de óleo</option><option>Emerson Pirômetro</option></select><input id="piSerie" placeholder="Número de série"><input id="piAfericao" type="date" onchange="calcularVencimentoPiro()"><input id="piVencimento" type="date" readonly></div>
+<button onclick="salvarPirometro()">Cadastrar / atualizar Pirômetro</button><button style="width:auto" onclick="limparFormularioPiro()">Limpar</button><div id="piroMsg" class="msg hidden"></div>
+<h3>Equipamentos cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Localização</th><th>Fabricante / modelo</th><th>Nº série</th><th>Aferição</th><th>Vencimento</th><th>Dias</th><th>Status</th><th>Ação</th></tr></thead><tbody id="piroBody"></tbody></table></div></div>
 </section>
 
 <section id="pecasAdmin" class="page hidden">
 <div class="card"><h2>Cadastro de Itens</h2><div class="grid"><input id="pCodigo" placeholder="Código"><input id="pDescricao" placeholder="Descrição"><input id="pEquipamento" placeholder="Equipamento"><input id="pIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"><input id="pCriticidade" placeholder="Criticidade"><input id="pUnidade" placeholder="Unidade" value="UN"></div><button onclick="salvarPeca()">Cadastrar item</button><div id="pecaMsg" class="msg hidden"></div><h3>Itens cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Descrição</th><th>Equipamento</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="pecasAdminBody"></tbody></table></div></div>
 </section>
 
+<section id="pecasGestor" class="page hidden"><div class="card"><h2>Cadastro de Itens</h2><div class="grid"><input id="gCodigo" placeholder="Código"><input id="gDescricao" placeholder="Descrição"><input id="gEquipamento" placeholder="Equipamento"><input id="gIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"><input id="gCriticidade" placeholder="Criticidade"><input id="gUnidade" value="UN" placeholder="Unidade"></div><button onclick="salvarPecaGestor()">Cadastrar item</button><div id="gestorPecaMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Descrição</th><th>Equipamento</th><th>Ideal</th><th>Ação</th></tr></thead><tbody id="gestorPecaBody"></tbody></table></div></div></section>
+<section id="equipamentosGestor" class="page hidden"><div class="card"><h2>Cadastro de Equipamentos</h2><div class="grid"><input id="eCodigo" placeholder="Código"><input id="eNome" placeholder="Nome"><input id="eFabricante" placeholder="Fabricante"><input id="eModelo" placeholder="Modelo"><input id="ePatrimonio" placeholder="Patrimônio"><select id="eRestaurante"><option value="">Ponto de venda</option></select></div><button onclick="salvarEquipamento()">Cadastrar equipamento</button><div id="equipMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Nome</th><th>Fabricante</th><th>Modelo</th><th>Patrimônio</th><th>Ponto de venda</th><th>Ação</th></tr></thead><tbody id="equipBody"></tbody></table></div></div></section>
+<section id="restaurantesGestor" class="page hidden"><div class="card"><h2>Cadastro de Pontos de Venda</h2><p><small>Cadastre novos pontos de venda para utilização no estoque, movimentações e equipamentos. O cadastro pode ser desativado sem apagar o histórico.</small></p><div class="grid"><input id="rCodigoNovo" placeholder="Código do ponto de venda"><input id="rNomeNovo" placeholder="Nome do ponto de venda"><input id="rCidadeNovo" placeholder="Cidade"><input id="rUfNovo" maxlength="2" placeholder="UF"></div><button onclick="salvarRestaurante()">Cadastrar ponto de venda</button><div id="restMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Nome</th><th>Cidade</th><th>UF</th><th>Status</th><th>Ação</th></tr></thead><tbody id="restBody"></tbody></table></div></div></section>
 <section id="usuariosAdmin" class="page hidden">
 <div class="card"><h2>Cadastro de Usuários</h2><div class="grid"><input id="uNome" placeholder="Nome"><input id="uEmail" type="email" placeholder="E-mail"><input id="uSenha" type="password" placeholder="Senha inicial (mín. 6 caracteres)"><select id="uPerfil"><option>Operacional</option><option>Gestor</option><option>Administrador</option></select><select id="uRestaurante"><option value="">Restaurante (opcional)</option></select></div><button onclick="salvarUsuario()">Cadastrar usuário</button><div id="usuarioMsg" class="msg hidden"></div><p><small>O Administrador cria a conta de login e a senha inicial. O usuário receberá acesso conforme o perfil selecionado.</small></p><h3>Usuários cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ação</th></tr></thead><tbody id="usuariosAdminBody"></tbody></table></div></div></section>
 </main></section>
@@ -85,7 +124,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <script>
 const cfg=window.INVENTARIO_CONFIG;
 const sb=supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY);
-let estoque=[], restaurantes=[], pecas=[], usuariosAdmin=[], usuario=null, perfilUsuario=null, ultimaHistorico=[];
+let estoque=[], restaurantes=[], pecas=[], usuariosAdmin=[], equipamentos=[], pirometros=[], usuario=null, perfilUsuario=null, ultimaHistorico=[], piroEditId=null;
 
 function msg(id,text){let e=document.getElementById(id);e.textContent=text;e.classList.remove('hidden')}
 async function login(){
@@ -99,27 +138,36 @@ async function iniciar(u){
  const {data:p}=await sb.from('usuarios').select('nome,email,perfil,restaurante_id,ativo').eq('id',u.id).maybeSingle();
  if(!p||!p.ativo){await sb.auth.signOut();return msg('loginMsg','Usuário sem permissão ou inativo.')}
  perfilUsuario=p.perfil; userInfo.textContent=`${p.nome} • ${p.perfil}`;
- if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden');
+ if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden'); if(['Gestor','Administrador'].includes(perfilUsuario)) { gestorNav.classList.remove('hidden'); piroNav.classList.remove('hidden'); } else { gestorNav.classList.add('hidden'); piroNav.classList.add('hidden'); }
  await carregar();
 }
 async function carregar(){
- const [r,p,u,m,e]=await Promise.all([
+ const [r,p,u,m,e,eq,pr]=await Promise.all([
   sb.from('restaurantes').select('*').order('codigo'),
   sb.from('pecas').select('*').order('codigo'),
   sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').order('nome'),
-  sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome), responsavel:usuarios!movimentacoes_responsavel_id_fkey(nome,email)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
-  sb.from('estoque_status').select('*')
+  sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome), responsavel:usuarios!movimentacoes_responsavel_id_fkey(nome,email)',{count:'exact'}).order('created_at',{ascending:false}).limit(1000),
+  sb.from('estoque_status').select('*'),sb.from('equipamentos').select('*').order('codigo'),sb.from('pirometros_alertas').select('*').order('data_vencimento')
  ]);
- restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];
+ restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];equipamentos=eq.data||[];pirometros=pr.data||[];
  kRest.textContent=restaurantes.length;kPecas.textContent=pecas.length;kMov.textContent=m.count??(m.data||[]).length;
  kCrit.textContent=estoque.filter(x=>x.status==='CRÍTICO').length;
+ kExcesso.textContent=estoque.filter(x=>x.status==='EXCESSO').length;
+ kPiroAlerta.textContent=pirometros.filter(x=>x.status==='ALERTA').length;
+ kPiroVencido.textContent=pirometros.filter(x=>x.status==='VENCIDO').length;
+ kPiroOk.textContent=pirometros.filter(x=>x.status==='OK').length;
  filtroRest.innerHTML='<option value="">Todos os restaurantes</option>'+restaurantes.map(x=>`<option value="${x.codigo}">${x.codigo}</option>`).join('');
  origem.innerHTML='<option value="">Origem</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
  destino.innerHTML='<option value="">Destino</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
  peca.innerHTML='<option value="">Peça</option>'+pecas.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.descricao}</option>`).join('');
  pecaBusca.value='';
  pecasLista.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<option value="${x.codigo} - ${x.descricao}"></option>`).join('');
- renderPecasAdmin();renderUsuariosAdmin();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ filtroHistRest.innerHTML='<option value="">Todos os pontos de venda</option>'+restaurantes.map(x=>'<option value="'+x.codigo+'">'+x.codigo+' - '+x.nome+'</option>').join('');
+filtroHistResp.innerHTML='<option value="">Todos os responsáveis</option>'+usuariosAdmin.map(x=>'<option value="'+x.id+'">'+(x.nome||x.email||'')+'</option>').join('');
+equipamentoMov.innerHTML='<option value="">Equipamento (opcional)</option>'+equipamentos.filter(x=>x.ativo!==false).map(x=>'<option value="'+x.id+'">'+(x.codigo||'')+' - '+(x.nome||'')+'</option>').join('');
+eRestaurante.innerHTML='<option value="">Ponto de venda</option>'+restaurantes.filter(x=>x.ativo!==false).map(x=>'<option value="'+x.id+'">'+x.codigo+' - '+x.nome+'</option>').join('');
+piLocalizacao.innerHTML='<option value="">Localização — Ponto de venda</option>'+restaurantes.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ renderPecasAdmin();renderUsuariosAdmin();renderPecasGestor();renderEquipamentos();renderRestaurantesGestor();renderPirometros();renderDashboardAlertas();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
 }
 function renderEstoque(){
  const q=(buscaEstoque.value||'').toLowerCase(), fr=filtroRest.value, fs=filtroStatus.value;
@@ -131,7 +179,7 @@ function renderEstoque(){
    const acao=podeEditar
      ? `<button style="width:auto;margin:0" onclick="editarEstoque('${rest?.id||''}','${pecaObj?.id||''}',${Number(x.estoque_atual)||0},'${String(x.restaurante||'').replace(/'/g,"\\'")}','${String(x.codigo_peca||'').replace(/'/g,"\\'")}')">Editar estoque</button>`
      : '—';
-   return `<tr><td>${x.restaurante}</td><td>${x.codigo_peca}</td><td>${x.descricao}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='ATENÇÃO'?'att':'ok'}">${x.status}</span></td><td>${acao}</td></tr>`;
+   return `<tr><td>${x.restaurante}</td><td>${x.codigo_peca}</td><td>${x.descricao}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='EXCESSO'?'att':'ok'}">${x.status}</span></td><td>${acao}</td></tr>`;
  }).join('');
 }
 async function editarEstoque(restauranteId, pecaId, estoqueAtual, restauranteCodigo, pecaCodigo){
@@ -151,7 +199,7 @@ async function editarEstoque(restauranteId, pecaId, estoqueAtual, restauranteCod
  alert('Estoque ajustado com sucesso. O ajuste foi registrado no histórico.');
  await carregar();
 }
-function renderHist(rows){const ft=filtroHistTipo?.value||'';histBody.innerHTML=rows.filter(x=>!ft||x.tipo===ft).map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('pt-BR')}</td><td>${x.tipo}</td><td>${x.pecas?.codigo||''}</td><td>${x.pecas?.descricao||'—'}</td><td>${x.origem?.codigo||'—'}${x.destino?.codigo?' → '+x.destino.codigo:''}</td><td>${x.quantidade}</td><td>${x.motivo||''}</td><td>${x.responsavel?.nome||x.responsavel?.email||'—'}</td></tr>`).join('')} 
+function renderHist(rows){const tf=filtroHistTipo?.value||'',rf=filtroHistRest?.value||'',uf=filtroHistResp?.value||'',b=(filtroHistBusca?.value||'').trim().toLowerCase(),de=filtroHistDe?.value||'',ate=filtroHistAte?.value||'';const a=rows.filter(x=>{const d=new Date(x.created_at),dia=d.toISOString().slice(0,10),txt=[x.tipo,x.pecas?.codigo,x.pecas?.descricao,x.origem?.codigo,x.origem?.nome,x.destino?.codigo,x.destino?.nome,x.motivo,x.responsavel?.nome,x.responsavel?.email].filter(Boolean).join(' ').toLowerCase();return(!tf||x.tipo===(tf==='Saída'?'Retirada':tf))&&(!rf||x.origem?.codigo===rf||x.destino?.codigo===rf)&&(!uf||x.responsavel?.id===uf)&&(!b||txt.includes(b))&&(!de||dia>=de)&&(!ate||dia<=ate)});histBody.innerHTML=a.map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('pt-BR')}</td><td>${x.tipo==='Retirada'?'Saída':x.tipo}</td><td>${x.pecas?.codigo||''}</td><td>${x.pecas?.descricao||'—'}</td><td>${x.origem?.codigo||'—'}${x.destino?.codigo?' → '+x.destino.codigo:''}</td><td>${x.quantidade}</td><td>${x.motivo||''}</td><td>${x.responsavel?.nome||x.responsavel?.email||'—'}</td></tr>`).join('')}function limparFiltrosHist(){filtroHistBusca.value='';filtroHistTipo.value='';filtroHistRest.value='';filtroHistResp.value='';filtroHistDe.value='';filtroHistAte.value='';renderHist(ultimaHistorico)} 
 function sincronizaPecaBusca(){
  const termo=(pecaBusca.value||'').trim().toLowerCase();
  if(!termo){ peca.value=''; return; }
@@ -174,20 +222,68 @@ pecaBusca.addEventListener('blur', ()=>{
 });
 
 function ajustaMov(){
- const t=tipo.value; origem.style.display=t==='Entrada'?'none':'block'; destino.style.display=t==='Retirada'?'none':'block';
+ const t=tipo.value; origem.style.display=t==='Entrada'?'none':'block'; destino.style.display=t==='Saída'?'none':'block';
 }
 async function salvarMov(){
  const t=tipo.value,q=Number(quantidade.value),pid=peca.value,mot=motivo.value.trim();
  if(!pid||!q||q<=0||!mot)return msg('movMsg','Preencha peça, quantidade e motivo.');
  if(t==='Entrada'&&!destino.value)return msg('movMsg','Selecione o restaurante de destino.');
- if(t==='Retirada'&&!origem.value)return msg('movMsg','Selecione o restaurante de origem.');
+ if(t==='Saída'&&!origem.value)return msg('movMsg','Selecione o restaurante de origem.');
  if(t==='Transferência'&&(!origem.value||!destino.value||origem.value===destino.value))return msg('movMsg','Selecione origem e destino diferentes.');
- const row={tipo:t,peca_id:pid,quantidade:q,motivo:mot,responsavel_id:usuario.id,
-  origem_id:t==='Entrada'?null:origem.value,destino_id:t==='Retirada'?null:destino.value};
+ const row={peca_id:pid,equipamento_id:equipamentoMov.value||null,quantidade:q,motivo:mot,responsavel_id:usuario.id,
+  tipo:t==='Saída'?'Retirada':t,origem_id:t==='Entrada'?null:origem.value,destino_id:t==='Saída'?null:destino.value};
  const {error}=await sb.from('movimentacoes').insert(row);
  if(error)return msg('movMsg','Erro: '+error.message);
  msg('movMsg','Movimentação registrada com sucesso.');quantidade.value='';motivo.value='';await carregar();
 }
+
+function calcularVencimentoPiro(){
+ const v=piAfericao.value;
+ if(!v){piVencimento.value='';return;}
+ const d=new Date(v+'T00:00:00'); d.setMonth(d.getMonth()+6);
+ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ piVencimento.value=`${y}-${m}-${day}`;
+}
+function limparFormularioPiro(){piroEditId=null;piLocalizacao.value='';piFabricante.value='';piSerie.value='';piAfericao.value='';piVencimento.value='';piroMsg.classList.add('hidden');}
+function renderPirometros(){
+ if(!['Gestor','Administrador'].includes(perfilUsuario))return;
+ piroBody.innerHTML=pirometros.map(x=>{const dias=Number(x.dias_para_vencer);const st=x.status||'OK';const cls=st==='VENCIDO'?'crit':st==='ALERTA'?'att':'ok';return `<tr><td>${x.localizacao_codigo||''} - ${x.localizacao_nome||''}</td><td>${x.fabricante_modelo||''}</td><td>${x.numero_serie||''}</td><td>${fmtData(x.data_afericao)}</td><td>${fmtData(x.data_vencimento)}</td><td>${dias}</td><td><span class="badge ${cls}">${st}</span></td><td><button style="width:auto" onclick="editarPirometro('${x.id}')">Editar</button> <button style="width:auto" onclick="desativarPirometro('${x.id}')">Desativar</button></td></tr>`}).join('');
+}
+function fmtData(v){if(!v)return '—';const [y,m,d]=String(v).slice(0,10).split('-');return `${d}/${m}/${y}`;}
+function renderDashboardAlertas(){
+ const crit=estoque.filter(x=>x.status==='CRÍTICO');
+ const exc=estoque.filter(x=>x.status==='EXCESSO');
+ const pa=pirometros.filter(x=>x.status==='ALERTA'||x.status==='VENCIDO');
+ dashCritCount.textContent=crit.length; dashExcCount.textContent=exc.length; dashPiroCount.textContent=pa.length;
+ dashCritList.innerHTML=crit.slice(0,5).map(x=>`<li><span class="signal red">!</span><span><b>${x.restaurante}</b> — ${x.codigo_peca}<br><small>${x.estoque_atual} de ${x.quantidade_ideal} ideal</small></span></li>`).join('') || '<li class="alert-empty">✓ Nenhum item crítico.</li>';
+ dashExcList.innerHTML=exc.slice(0,5).map(x=>`<li><span class="signal yellow">!</span><span><b>${x.restaurante}</b> — ${x.codigo_peca}<br><small>${x.estoque_atual} de ${x.quantidade_ideal} ideal</small></span></li>`).join('') || '<li class="alert-empty">✓ Nenhum item em excesso.</li>';
+ dashboardEstoqueAlertas.innerHTML=crit.length?'<ul>'+crit.slice(0,10).map(x=>`<li><span class="badge crit">CRÍTICO</span> ${x.restaurante} — ${x.codigo_peca}: ${x.estoque_atual}/${x.quantidade_ideal}</li>`).join('')+'</ul>':'<p class="alert-empty">✓ Estoque sem itens críticos.</p>';
+ dashboardEstoqueExcesso.innerHTML=exc.length?'<ul>'+exc.slice(0,10).map(x=>`<li><span class="badge att">EXCESSO</span> ${x.restaurante} — ${x.codigo_peca}: ${x.estoque_atual}/${x.quantidade_ideal}</li>`).join('')+'</ul>':'<p class="alert-empty">✓ Nenhum excesso identificado.</p>';
+ dashPiroList.innerHTML=pa.slice(0,5).map(x=>`<li><span class="signal ${x.status==='VENCIDO'?'red':'yellow'}">${x.status==='VENCIDO'?'!':'⌛'}</span><span><b>${x.localizacao_codigo}</b> — ${x.fabricante_modelo}<br><small>${x.status} · venc. ${fmtData(x.data_vencimento)}</small></span></li>`).join('') || '<li class="alert-empty">✓ Todos os pirômetros estão em dia.</li>';
+ dashboardPiroAlertas.innerHTML=pa.length?'<ul>'+pa.map(x=>`<li><span class="badge ${x.status==='VENCIDO'?'crit':'att'}">${x.status}</span> ${x.localizacao_codigo} — ${x.fabricante_modelo} — série ${x.numero_serie} — venc. ${fmtData(x.data_vencimento)} (${x.dias_para_vencer} dias)</li>`).join('')+'</ul>':'<p class="alert-empty">✓ Nenhum pirômetro em alerta.</p>';
+}
+async function salvarPirometro(){
+ if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('piroMsg','Acesso permitido somente ao Gestor ou Administrador.');
+ const localizacao_id=piLocalizacao.value,fabricante_modelo=piFabricante.value,numero_serie=piSerie.value.trim(),data_afericao=piAfericao.value;
+ if(!localizacao_id||!fabricante_modelo||!numero_serie||!data_afericao)return msg('piroMsg','Preencha localização, fabricante/modelo, número de série e data de aferição.');
+ calcularVencimentoPiro();
+ const payload={localizacao_id,fabricante_modelo,numero_serie,data_afericao,data_vencimento:piVencimento.value,ativo:true};
+ let q=piroEditId?sb.from('pirometros').update(payload).eq('id',piroEditId):sb.from('pirometros').insert(payload);
+ const {error}=await q; if(error)return msg('piroMsg','Erro: '+error.message);
+ msg('piroMsg',piroEditId?'Pirômetro atualizado com sucesso.':'Pirômetro cadastrado com sucesso.'); limparFormularioPiro(); await carregar();
+}
+function editarPirometro(id){const x=pirometros.find(a=>a.id===id);if(!x)return;piroEditId=id;piLocalizacao.value=x.localizacao_id;piFabricante.value=x.fabricante_modelo;piSerie.value=x.numero_serie;piAfericao.value=String(x.data_afericao).slice(0,10);piVencimento.value=String(x.data_vencimento).slice(0,10);showPage('pirimetro');}
+async function desativarPirometro(id){if(!confirm('Desativar este pirômetro? O histórico do cadastro será preservado.'))return;const {error}=await sb.from('pirometros').update({ativo:false}).eq('id',id);if(error)return msg('piroMsg','Erro: '+error.message);await carregar();}
+
+async function salvarPecaGestor(){if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('gestorPecaMsg','Acesso permitido somente ao Gestor ou Administrador.');const codigo=gCodigo.value.trim(),descricao=gDescricao.value.trim(),equipamento=gEquipamento.value.trim(),ideal=gIdeal.value===''?null:Number(gIdeal.value),criticidade=gCriticidade.value.trim()||null,unidade=gUnidade.value.trim()||'UN';if(!codigo||!descricao)return msg('gestorPecaMsg','Código e descrição são obrigatórios.');const {error}=await sb.from('pecas').insert({codigo,descricao,equipamento:equipamento||null,quantidade_ideal:ideal,criticidade,unidade,ativo:true});if(error)return msg('gestorPecaMsg','Erro: '+error.message);msg('gestorPecaMsg','Item cadastrado com sucesso.');await carregar();}
+function renderPecasGestor(){if(!['Gestor','Administrador'].includes(perfilUsuario))return;gestorPecaBody.innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>'<tr><td>'+x.codigo+'</td><td>'+x.descricao+'</td><td>'+(x.equipamento||'—')+'</td><td>'+(x.quantidade_ideal??'—')+'</td><td><button onclick="desativarPecaGestor(\''+x.id+'\')">Desativar</button></td></tr>').join('');}
+async function desativarPecaGestor(id){if(!confirm('Desativar este item? O histórico será preservado.'))return;const {error}=await sb.from('pecas').update({ativo:false}).eq('id',id);if(error)return msg('gestorPecaMsg','Erro: '+error.message);await carregar();}
+async function salvarEquipamento(){if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('equipMsg','Acesso permitido somente ao Gestor ou Administrador.');const codigo=eCodigo.value.trim(),nome=eNome.value.trim(),fabricante=eFabricante.value.trim(),modelo=eModelo.value.trim(),patrimonio=ePatrimonio.value.trim(),restaurante_id=eRestaurante.value||null;if(!codigo||!nome)return msg('equipMsg','Código e nome são obrigatórios.');const {error}=await sb.from('equipamentos').insert({codigo,nome,fabricante:fabricante||null,modelo:modelo||null,patrimonio:patrimonio||null,restaurante_id,ativo:true});if(error)return msg('equipMsg','Erro: '+error.message);await carregar();}
+function renderEquipamentos(){if(!['Gestor','Administrador'].includes(perfilUsuario))return;equipBody.innerHTML=equipamentos.filter(x=>x.ativo!==false).map(x=>{const r=restaurantes.find(a=>a.id===x.restaurante_id);return '<tr><td>'+x.codigo+'</td><td>'+x.nome+'</td><td>'+(x.fabricante||'—')+'</td><td>'+(x.modelo||'—')+'</td><td>'+(x.patrimonio||'—')+'</td><td>'+(r?r.codigo:'—')+'</td><td><button onclick="desativarEquipamento(\''+x.id+'\')">Desativar</button></td></tr>'}).join('');}
+async function desativarEquipamento(id){if(!confirm('Desativar este equipamento? O histórico será preservado.'))return;const {error}=await sb.from('equipamentos').update({ativo:false}).eq('id',id);if(error)return msg('equipMsg','Erro: '+error.message);await carregar();}
+async function salvarRestaurante(){if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('restMsg','Acesso permitido somente ao Gestor ou Administrador.');const codigo=rCodigoNovo.value.trim().toUpperCase(),nome=rNomeNovo.value.trim(),cidade=rCidadeNovo.value.trim(),uf=rUfNovo.value.trim().toUpperCase();if(!codigo||!nome)return msg('restMsg','Código e nome são obrigatórios.');if(uf.length!==2)return msg('restMsg','Informe a UF com 2 letras.');const {error}=await sb.from('restaurantes').insert({codigo,nome,cidade,uf,ativo:true});if(error)return msg('restMsg','Erro: '+error.message);msg('restMsg','Ponto de venda cadastrado com sucesso.');await carregar();}
+function renderRestaurantesGestor(){if(!['Gestor','Administrador'].includes(perfilUsuario))return;restBody.innerHTML=restaurantes.filter(x=>x.ativo!==false).map(x=>'<tr><td>'+x.codigo+'</td><td>'+x.nome+'</td><td>'+(x.cidade||'—')+'</td><td>'+(x.uf||'—')+'</td><td>Ativo</td><td><button onclick="desativarRestaurante(\''+x.id+'\')">Desativar</button></td></tr>').join('');}
+async function desativarRestaurante(id){if(!confirm('Desativar este ponto de venda? O histórico será preservado.'))return;const {error}=await sb.from('restaurantes').update({ativo:false}).eq('id',id);if(error)return msg('restMsg','Erro: '+error.message);await carregar();}
 async function salvarPeca(){
  if(perfilUsuario!=='Administrador') return msg('pecaMsg','Acesso permitido somente ao Administrador.');
  const codigo=pCodigo.value.trim(), descricao=pDescricao.value.trim(), equipamento=pEquipamento.value.trim();
@@ -232,7 +328,7 @@ async function excluirUsuario(id,nome){
  msg('usuarioMsg','Usuário desativado com sucesso.'); await carregar();
 }
 
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+function showPage(id){if(id==='pirimetro' && !['Gestor','Administrador'].includes(perfilUsuario)) return;document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)await iniciar(data.session.user)})();
 async function alterarSenha(){
  const atual=senhaAtual.value, nova=novaSenha.value, confirma=confirmaSenha.value;
