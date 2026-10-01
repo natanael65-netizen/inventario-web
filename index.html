@@ -49,7 +49,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('estoque')">Estoque</button>
 <button onclick="showPage('mov')">Movimentação</button>
-<button onclick="showPage('historico')">Histórico</button><button id="piroNav" class="hidden" onclick="showPage('pirimetro')">Pirômetro</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button></span><span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentosGestor')">Equipamentos</button><button onclick="showPage('restaurantesGestor')">Pontos de Venda</button></span>
+<button onclick="showPage('historico')">Histórico</button><button id="piroNav" class="hidden" onclick="showPage('pirimetro')">Pirômetro</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button><button onclick="showPage('ferramentas')">Ferramentas</button></span><span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentosGestor')">Equipamentos</button><button onclick="showPage('restaurantesGestor')">Pontos de Venda</button><button onclick="showPage('ferramentas')">Ferramentas</button></span>
 </div>
 
 <section id="senha" class="page hidden">
@@ -104,7 +104,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 
 <section id="pirimetro" class="page hidden">
 <div class="card"><h2>Controle de Pirômetros</h2>
-<p><small>Cadastre o equipamento de medição, local de uso, número de série e aferição. O vencimento é calculado automaticamente para 1ano após a data de aferição. O Dashboard sinaliza alerta com 30 dias de antecedência.</small></p>
+<p><small>Cadastre o equipamento de medição, local de uso, número de série e aferição. O vencimento é calculado automaticamente para 1 ano após a data de aferição. O Dashboard sinaliza alerta com 30 dias de antecedência.</small></p>
 <div class="grid"><select id="piLocalizacao"><option value="">Localização — Ponto de venda</option></select><select id="piFabricante"><option value="">Fabricante / modelo</option><option>Testo Pirômetro</option><option>Testo Analisador de óleo</option><option>Emerson Pirômetro</option></select><input id="piSerie" placeholder="Número de série"><input id="piAfericao" type="date" onchange="calcularVencimentoPiro()"><input id="piVencimento" type="date" readonly></div>
 <button onclick="salvarPirometro()">Cadastrar / atualizar Pirômetro</button><button style="width:auto" onclick="limparFormularioPiro()">Limpar</button><div id="piroMsg" class="msg hidden"></div>
 <h3>Equipamentos cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Localização</th><th>Fabricante / modelo</th><th>Nº série</th><th>Aferição</th><th>Vencimento</th><th>Dias</th><th>Status</th><th>Ação</th></tr></thead><tbody id="piroBody"></tbody></table></div></div>
@@ -116,6 +116,17 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 
 <section id="equipamentosGestor" class="page hidden"><div class="card"><h2>Cadastro de Equipamentos</h2><div class="grid"><input id="eCodigo" placeholder="Código"><input id="eNome" placeholder="Nome"><input id="eFabricante" placeholder="Fabricante"><input id="eModelo" placeholder="Modelo"><input id="ePatrimonio" placeholder="Patrimônio"><select id="eRestaurante"><option value="">Ponto de venda</option></select></div><button onclick="salvarEquipamento()">Cadastrar equipamento</button><div id="equipMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Nome</th><th>Fabricante</th><th>Modelo</th><th>Patrimônio</th><th>Ponto de venda</th><th>Ação</th></tr></thead><tbody id="equipBody"></tbody></table></div></div></section>
 <section id="restaurantesGestor" class="page hidden"><div class="card"><h2>Cadastro de Pontos de Venda</h2><p><small>Cadastre novos pontos de venda para utilização no estoque, movimentações e equipamentos. O cadastro pode ser desativado sem apagar o histórico.</small></p><div class="grid"><input id="rCodigoNovo" placeholder="Código do ponto de venda"><input id="rNomeNovo" placeholder="Nome do ponto de venda"><input id="rCidadeNovo" placeholder="Cidade"><input id="rUfNovo" maxlength="2" placeholder="UF"></div><button onclick="salvarRestaurante()">Cadastrar ponto de venda</button><div id="restMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Nome</th><th>Cidade</th><th>UF</th><th>Status</th><th>Ação</th></tr></thead><tbody id="restBody"></tbody></table></div></div></section>
+<section id="ferramentas" class="page hidden">
+<div class="card"><h2>Controle de Ferramentas</h2>
+<p><small>Registre as ferramentas fornecidas aos colaboradores, vinculando cada item ao colaborador e ao ponto de venda. O Gestor visualiza e administra somente as ferramentas do restaurante ao qual está vinculado.</small></p>
+<div class="grid"><select id="fColaborador" onchange="ajustaFerramentaRestaurante()"><option value="">Colaborador</option></select><select id="fRestaurante" onchange="carregarColaboradoresFerramenta()"><option value="">Restaurante</option></select><input id="fDataAquisicao" type="date" title="Data de aquisição"><input id="fMarca" placeholder="Marca da ferramenta"><input id="fDescricao" placeholder="Descrição da ferramenta"><input id="fQuantidade" type="number" min="0.01" step="0.01" placeholder="Quantidade"></div>
+<button onclick="salvarFerramenta()">Cadastrar ferramenta</button><button id="fCancelarEdicao" class="hidden" style="width:auto" onclick="limparFormularioFerramenta()">Cancelar edição</button>
+<div id="ferramentaMsg" class="msg hidden"></div>
+<h3>Ferramentas fornecidas</h3>
+<div class="filterbar"><input id="ferramentaBusca" placeholder="Buscar colaborador, restaurante, marca ou descrição" oninput="renderFerramentas()"><select id="ferramentaFiltroRest" onchange="renderFerramentas()"><option value="">Todos os restaurantes</option></select></div>
+<div style="overflow:auto"><table><thead><tr><th>Colaborador</th><th>Restaurante</th><th>Data aquisição</th><th>Marca</th><th>Descrição</th><th>Quantidade</th><th>Status</th><th>Ação</th></tr></thead><tbody id="ferramentasBody"></tbody></table></div></div>
+</section>
+
 <section id="usuariosAdmin" class="page hidden">
 <div class="card"><h2>Cadastro de Usuários</h2><div class="grid"><input id="uNome" placeholder="Nome"><input id="uEmail" type="email" placeholder="E-mail"><input id="uSenha" type="password" placeholder="Senha inicial (mín. 6 caracteres)"><select id="uPerfil"><option>Operacional</option><option>Gestor</option><option>Administrador</option></select><select id="uRestaurante"><option value="">Restaurante (opcional)</option></select></div><button onclick="salvarUsuario()">Cadastrar usuário</button><div id="usuarioMsg" class="msg hidden"></div><p><small>O Administrador cria a conta de login e a senha inicial. O usuário receberá acesso conforme o perfil selecionado.</small></p><h3>Usuários cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ação</th></tr></thead><tbody id="usuariosAdminBody"></tbody></table></div></div></section>
 </main></section>
@@ -123,7 +134,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <script>
 const cfg=window.INVENTARIO_CONFIG;
 const sb=supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY);
-let estoque=[], restaurantes=[], pecas=[], usuariosAdmin=[], equipamentos=[], pirometros=[], usuario=null, perfilUsuario=null, ultimaHistorico=[], piroEditId=null;
+let estoque=[], restaurantes=[], pecas=[], usuariosAdmin=[], equipamentos=[], pirometros=[], ferramentas=[], usuario=null, perfilUsuario=null, ultimaHistorico=[], piroEditId=null, ferramentaEditId=null;
 
 function msg(id,text){let e=document.getElementById(id);e.textContent=text;e.classList.remove('hidden')}
 async function login(){
@@ -141,14 +152,14 @@ async function iniciar(u){
  await carregar();
 }
 async function carregar(){
- const [r,p,u,m,e,eq,pr]=await Promise.all([
+ const [r,p,u,m,e,eq,pr,f]=await Promise.all([
   sb.from('restaurantes').select('*').order('codigo'),
   sb.from('pecas').select('*').order('codigo'),
   sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').order('nome'),
   sb.from('movimentacoes').select('*, pecas(codigo,descricao), origem:restaurantes!movimentacoes_origem_id_fkey(codigo,nome), destino:restaurantes!movimentacoes_destino_id_fkey(codigo,nome), responsavel:usuarios!movimentacoes_responsavel_id_fkey(nome,email)',{count:'exact'}).order('created_at',{ascending:false}).limit(1000),
-  sb.from('estoque_status').select('*'),sb.from('equipamentos').select('*').order('codigo'),sb.from('pirometros_alertas').select('*').order('data_vencimento')
+  sb.from('estoque_status').select('*'),sb.from('equipamentos').select('*').order('codigo'),sb.from('pirometros_alertas').select('*').order('data_vencimento'),sb.from('ferramentas').select('*, colaborador:usuarios!ferramentas_colaborador_id_fkey(nome,email), restaurante:restaurantes!ferramentas_restaurante_id_fkey(codigo,nome)').order('created_at',{ascending:false})
  ]);
- const falhas=[r,p,u,m,e,eq,pr].filter(x=>x.error); if(falhas.length){ console.error('Falha ao carregar dados',falhas.map(x=>x.error)); } restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];equipamentos=eq.data||[];pirometros=pr.data||[];
+ const falhas=[r,p,u,m,e,eq,pr,f].filter(x=>x.error); if(falhas.length){ console.error('Falha ao carregar dados',falhas.map(x=>x.error)); } restaurantes=r.data||[];pecas=p.data||[];usuariosAdmin=(u.data||[]);estoque=e.data||[];equipamentos=eq.data||[];pirometros=pr.data||[];ferramentas=f.data||[];
  kRest.textContent=restaurantes.length;kPecas.textContent=pecas.filter(x=>x.ativo!==false).length;kMov.textContent=m.count??(m.data||[]).length;
  kCrit.textContent=estoque.filter(x=>x.status==='CRÍTICO').length;
  kExcesso.textContent=estoque.filter(x=>x.status==='EXCESSO').length;
@@ -165,7 +176,10 @@ filtroHistResp.innerHTML='<option value="">Todos os responsáveis</option>'+usua
 equipamentoMov.innerHTML='<option value="">Equipamento (opcional)</option>'+equipamentos.filter(x=>x.ativo!==false).map(x=>'<option value="'+x.id+'">'+(x.codigo||'')+' - '+(x.nome||'')+'</option>').join('');
 eRestaurante.innerHTML='<option value="">Ponto de venda</option>'+restaurantes.filter(x=>x.ativo!==false).map(x=>'<option value="'+x.id+'">'+x.codigo+' - '+x.nome+'</option>').join('');
 piLocalizacao.innerHTML='<option value="">Localização — Ponto de venda</option>'+restaurantes.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
- renderPecasCadastro();renderUsuariosAdmin();renderEquipamentos();renderRestaurantesGestor();renderPirometros();renderDashboardAlertas();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ renderPecasCadastro();renderUsuariosAdmin();renderEquipamentos();renderRestaurantesGestor();renderPirometros();renderFerramentas();renderDashboardAlertas();ultimaHistorico=m.data||[];renderEstoque();renderHist(ultimaHistorico);ajustaMov();uRestaurante.innerHTML='<option value="">Restaurante (opcional)</option>'+restaurantes.map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ferramentaFiltroRest.innerHTML='<option value="">Todos os restaurantes</option>'+restaurantes.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+carregarColaboradoresFerramenta();
+
 }
 function renderEstoque(){
  const q=(buscaEstoque.value||'').toLowerCase(), fr=filtroRest.value, fs=filtroStatus.value;
@@ -238,7 +252,7 @@ async function salvarMov(){
 function calcularVencimentoPiro(){
  const v=piAfericao.value;
  if(!v){piVencimento.value='';return;}
-const d=new Date(v+'T00:00:00'); d.setFullYear(d.getFullYear()+1);
+ const d=new Date(v+'T00:00:00'); d.setFullYear(d.getFullYear()+1);
  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
  piVencimento.value=`${y}-${m}-${day}`;
 }
@@ -305,6 +319,62 @@ async function excluirPeca(id,codigo){
  await carregar();
 }
 
+function carregarColaboradoresFerramenta(){
+ const sel=document.getElementById('fColaborador'), restSel=document.getElementById('fRestaurante');
+ if(!sel||!restSel)return;
+ const restId=restSel.value;
+ const lista=usuariosAdmin.filter(x=>x.ativo!==false && (!restId || x.restaurante_id===restId));
+ const atual=sel.value;
+ sel.innerHTML='<option value="">Colaborador</option>'+lista.map(x=>`<option value="${x.id}">${x.nome||x.email}</option>`).join('');
+ if(lista.some(x=>x.id===atual)) sel.value=atual;
+}
+function ajustaFerramentaRestaurante(){
+ const c=document.getElementById('fColaborador'), r=document.getElementById('fRestaurante');
+ const u=usuariosAdmin.find(x=>x.id===c.value);
+ if(u?.restaurante_id){r.value=u.restaurante_id; carregarColaboradoresFerramenta(); c.value=u.id;}
+}
+function prepararFormularioFerramenta(){
+ const r=document.getElementById('fRestaurante');
+ const podeGlobal=perfilUsuario==='Administrador';
+ const meuRest=usuariosAdmin.find(x=>x.id===usuario?.id)?.restaurante_id;
+ r.innerHTML='<option value="">Restaurante</option>'+restaurantes.filter(x=>x.ativo!==false && (podeGlobal || x.id===meuRest)).map(x=>`<option value="${x.id}">${x.codigo} - ${x.nome}</option>`).join('');
+ if(!podeGlobal && meuRest){r.value=meuRest;}
+ carregarColaboradoresFerramenta();
+}
+async function salvarFerramenta(){
+ if(!['Gestor','Administrador'].includes(perfilUsuario)) return msg('ferramentaMsg','Acesso permitido somente ao Gestor ou Administrador.');
+ const colaborador_id=fColaborador.value, restaurante_id=fRestaurante.value, data_aquisicao=fDataAquisicao.value, marca=fMarca.value.trim(), descricao=fDescricao.value.trim(), quantidade=Number(fQuantidade.value);
+ if(!colaborador_id||!restaurante_id||!data_aquisicao||!marca||!descricao||!(quantidade>0)) return msg('ferramentaMsg','Preencha colaborador, restaurante, data de aquisição, marca, descrição e quantidade.');
+ const col=usuariosAdmin.find(x=>x.id===colaborador_id);
+ if(!col||col.ativo===false||col.restaurante_id!==restaurante_id) return msg('ferramentaMsg','O colaborador selecionado deve estar ativo e vinculado ao restaurante informado.');
+ const payload={colaborador_id,restaurante_id,data_aquisicao,marca,descricao,quantidade,ativo:true};
+ let q;
+ if(ferramentaEditId) q=await sb.from('ferramentas').update(payload).eq('id',ferramentaEditId); else q=await sb.from('ferramentas').insert(payload);
+ if(q.error)return msg('ferramentaMsg','Erro: '+q.error.message);
+ msg('ferramentaMsg',ferramentaEditId?'Ferramenta atualizada com sucesso.':'Ferramenta cadastrada com sucesso.');
+ limparFormularioFerramenta(false); await carregar();
+}
+function limparFormularioFerramenta(mensagem=true){
+ ferramentaEditId=null; fColaborador.value=''; fDataAquisicao.value=''; fMarca.value=''; fDescricao.value=''; fQuantidade.value='';
+ document.getElementById('fCancelarEdicao')?.classList.add('hidden'); prepararFormularioFerramenta();
+ if(mensagem){document.getElementById('ferramentaMsg')?.classList.add('hidden');}
+}
+function editarFerramenta(id){
+ if(!['Gestor','Administrador'].includes(perfilUsuario))return;
+ const x=ferramentas.find(a=>a.id===id); if(!x)return;
+ ferramentaEditId=id; fRestaurante.value=x.restaurante_id; carregarColaboradoresFerramenta(); fColaborador.value=x.colaborador_id; fDataAquisicao.value=x.data_aquisicao||''; fMarca.value=x.marca||''; fDescricao.value=x.descricao||''; fQuantidade.value=x.quantidade||''; document.getElementById('fCancelarEdicao')?.classList.remove('hidden'); document.getElementById('ferramentas')?.scrollIntoView({behavior:'smooth'});
+}
+function renderFerramentas(){
+ if(!['Gestor','Administrador'].includes(perfilUsuario))return;
+ prepararFormularioFerramenta();
+ const q=(ferramentaBusca.value||'').toLowerCase(), fr=ferramentaFiltroRest.value;
+ ferramentasBody.innerHTML=ferramentas.filter(x=>x.ativo!==false && (!fr||x.restaurante_id===fr) && `${x.colaborador?.nome||''} ${x.restaurante?.codigo||''} ${x.marca||''} ${x.descricao||''}`.toLowerCase().includes(q)).map(x=>`<tr><td>${x.colaborador?.nome||x.colaborador?.email||'—'}</td><td>${x.restaurante?.codigo||'—'}</td><td>${x.data_aquisicao?new Date(x.data_aquisicao+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${x.marca||'—'}</td><td>${x.descricao||'—'}</td><td>${x.quantidade}</td><td><span class="badge ok">Em uso</span></td><td><button style="width:auto" onclick="editarFerramenta('${x.id}')">Editar</button><button style="width:auto" onclick="desativarFerramenta('${x.id}')">Devolver / desativar</button></td></tr>`).join('');
+}
+async function desativarFerramenta(id){
+ if(!confirm('Marcar esta ferramenta como devolvida/inativa? O histórico do cadastro será preservado.'))return;
+ const {error}=await sb.from('ferramentas').update({ativo:false}).eq('id',id); if(error)return msg('ferramentaMsg','Erro: '+error.message); msg('ferramentaMsg','Ferramenta desativada com sucesso.'); await carregar();
+}
+
 async function salvarEquipamento(){if(!['Gestor','Administrador'].includes(perfilUsuario))return msg('equipMsg','Acesso permitido somente ao Gestor ou Administrador.');const codigo=eCodigo.value.trim(),nome=eNome.value.trim(),fabricante=eFabricante.value.trim(),modelo=eModelo.value.trim(),patrimonio=ePatrimonio.value.trim(),restaurante_id=eRestaurante.value||null;if(!codigo||!nome)return msg('equipMsg','Código e nome são obrigatórios.');const {error}=await sb.from('equipamentos').insert({codigo,nome,fabricante:fabricante||null,modelo:modelo||null,patrimonio:patrimonio||null,restaurante_id,ativo:true});if(error)return msg('equipMsg','Erro: '+error.message);await carregar();}
 function renderEquipamentos(){if(!['Gestor','Administrador'].includes(perfilUsuario))return;equipBody.innerHTML=equipamentos.filter(x=>x.ativo!==false).map(x=>{const r=restaurantes.find(a=>a.id===x.restaurante_id);return '<tr><td>'+x.codigo+'</td><td>'+x.nome+'</td><td>'+(x.fabricante||'—')+'</td><td>'+(x.modelo||'—')+'</td><td>'+(x.patrimonio||'—')+'</td><td>'+(r?r.codigo:'—')+'</td><td><button onclick="desativarEquipamento(\''+x.id+'\')">Desativar</button></td></tr>'}).join('');}
 async function desativarEquipamento(id){if(!confirm('Desativar este equipamento? O histórico será preservado.'))return;const {error}=await sb.from('equipamentos').update({ativo:false}).eq('id',id);if(error)return msg('equipMsg','Erro: '+error.message);await carregar();}
@@ -335,7 +405,7 @@ async function excluirUsuario(id,nome){
  msg('usuarioMsg','Usuário desativado com sucesso.'); await carregar();
 }
 
-function showPage(id){if(id==='pirimetro' && !['Gestor','Administrador'].includes(perfilUsuario)) return;document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+function showPage(id){if(['pirimetro','ferramentas'].includes(id) && !['Gestor','Administrador'].includes(perfilUsuario)) return;if(id==='ferramentas')prepararFormularioFerramenta();document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)await iniciar(data.session.user)})();
 async function alterarSenha(){
  const atual=senhaAtual.value, nova=novaSenha.value, confirma=confirmaSenha.value;
