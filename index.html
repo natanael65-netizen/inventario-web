@@ -104,7 +104,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 
 <section id="pirimetro" class="page hidden">
 <div class="card"><h2>Controle de Pirômetros</h2>
-<p><small>Cadastre o equipamento de medição, local de uso, número de série e aferição. O vencimento é calculado automaticamente para 6 meses após a data de aferição. O Dashboard sinaliza alerta com 30 dias de antecedência.</small></p>
+<p><small>Cadastre o equipamento de medição, local de uso, número de série e aferição. O vencimento é calculado automaticamente para 1ano após a data de aferição. O Dashboard sinaliza alerta com 30 dias de antecedência.</small></p>
 <div class="grid"><select id="piLocalizacao"><option value="">Localização — Ponto de venda</option></select><select id="piFabricante"><option value="">Fabricante / modelo</option><option>Testo Pirômetro</option><option>Testo Analisador de óleo</option><option>Emerson Pirômetro</option></select><input id="piSerie" placeholder="Número de série"><input id="piAfericao" type="date" onchange="calcularVencimentoPiro()"><input id="piVencimento" type="date" readonly></div>
 <button onclick="salvarPirometro()">Cadastrar / atualizar Pirômetro</button><button style="width:auto" onclick="limparFormularioPiro()">Limpar</button><div id="piroMsg" class="msg hidden"></div>
 <h3>Equipamentos cadastrados</h3><div style="overflow:auto"><table><thead><tr><th>Localização</th><th>Fabricante / modelo</th><th>Nº série</th><th>Aferição</th><th>Vencimento</th><th>Dias</th><th>Status</th><th>Ação</th></tr></thead><tbody id="piroBody"></tbody></table></div></div>
@@ -238,7 +238,7 @@ async function salvarMov(){
 function calcularVencimentoPiro(){
  const v=piAfericao.value;
  if(!v){piVencimento.value='';return;}
- const d=new Date(v+'T00:00:00'); d.setMonth(d.getMonth()+6);
+const d=new Date(v+'T00:00:00'); d.setFullYear(d.getFullYear()+1);
  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
  piVencimento.value=`${y}-${m}-${day}`;
 }
