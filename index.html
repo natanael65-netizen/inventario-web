@@ -49,7 +49,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('estoque')">Estoque</button>
 <button onclick="showPage('mov')">Movimentação</button>
-<button onclick="showPage('historico')">Histórico</button><button id="piroNav" class="hidden" onclick="showPage('pirimetro')">Pirômetro</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button><button onclick="showPage('ferramentas')">Ferramentas</button></span><span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentosGestor')">Equipamentos</button><button onclick="showPage('restaurantesGestor')">Pontos de Venda</button><button onclick="showPage('ferramentas')">Ferramentas</button></span>
+<button onclick="showPage('historico')">Histórico</button><button id="piroNav" class="hidden" onclick="showPage('pirimetro')">Pirômetro</button><button onclick="showPage('senha')">Alterar minha senha</button><span id="adminNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('usuariosAdmin')">Cadastro de Usuários</button></span><span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentosGestor')">Equipamentos</button><button onclick="showPage('restaurantesGestor')">Pontos de Venda</button></span><span id="ferramentasNav" class="hidden"><button onclick="showPage('ferramentas')">Ferramentas</button></span>
 </div>
 
 <section id="senha" class="page hidden">
@@ -148,7 +148,7 @@ async function iniciar(u){
  const {data:p}=await sb.from('usuarios').select('nome,email,perfil,restaurante_id,ativo').eq('id',u.id).maybeSingle();
  if(!p||!p.ativo){await sb.auth.signOut();return msg('loginMsg','Usuário sem permissão ou inativo.')}
  perfilUsuario=p.perfil; userInfo.textContent=`${p.nome} • ${p.perfil}`;
- if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden'); if(['Gestor','Administrador'].includes(perfilUsuario)) { gestorNav.classList.remove('hidden'); piroNav.classList.remove('hidden'); } else { gestorNav.classList.add('hidden'); piroNav.classList.add('hidden'); }
+ if(perfilUsuario==='Administrador') adminNav.classList.remove('hidden'); else adminNav.classList.add('hidden'); if(perfilUsuario==='Gestor') { gestorNav.classList.remove('hidden'); } else { gestorNav.classList.add('hidden'); } if(['Gestor','Administrador'].includes(perfilUsuario)) { ferramentasNav.classList.remove('hidden'); piroNav.classList.remove('hidden'); } else { ferramentasNav.classList.add('hidden'); piroNav.classList.add('hidden'); }
  await carregar();
 }
 async function carregar(){
