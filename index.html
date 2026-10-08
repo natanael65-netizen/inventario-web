@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Inventário Cahetel — V42</title>
+<title>Inventário Cahetel — V49</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-config.js"></script>
+<script>window.SUPABASE_URL="https://kbqymaubkjzqmbrqeoil.supabase.co";window.SUPABASE_ANON_KEY="sb_publishable_uzOyHANcdJm_tvfSDEnGAg_dR62Tou2";</script>
 <style>
 :root{font-family:Arial,sans-serif;color:#20242a;background:#f5f6f8}*{box-sizing:border-box}body{margin:0}
 header{background:#fff;border-bottom:1px solid #ddd;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
@@ -26,8 +26,9 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 </style>
 </head>
 <body>
+<!-- V49: base limpa de peças/estoque; equipamentos, usuários, pirômetros e PDVs preservados -->
 <div id="loginView" class="login card">
-  <div class="brand"><div class="brand-mark">C</div><div><h1>Inventário Cahetel</h1><div class="muted">Gestão de peças, equipamentos e ferramentas</div></div></div>
+  <div class="brand"><div class="brand-mark">C</div><div><h1>Inventário Cahetel</h1><div class="muted">Gestão de itens, equipamentos e ferramentas</div></div></div>
   <input id="email" type="email" placeholder="E-mail">
   <input id="password" type="password" placeholder="Senha">
   <button onclick="login()" style="background:#d91e18;color:#fff">Entrar</button>
@@ -42,7 +43,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <main>
 <div class="nav">
 <button onclick="showPage('dashboard')">Dashboard</button><button onclick="showPage('estoque')">Estoque</button><button onclick="showPage('mov')">Movimentação</button><button onclick="showPage('historico')">Histórico</button>
-<span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentos')">Equipamentos</button><button onclick="showPage('restaurantes')">Pontos de Venda</button><button onclick="showPage('ferramentas')">Ferramentas</button><button onclick="showPage('pirometros')">Pirômetros</button></span>
+<span id="gestorNav" class="hidden"><button onclick="showPage('pecasCadastro')">Cadastro de Itens</button><button onclick="showPage('equipamentos')">Equipamentos</button><button onclick="showPage('ferramentas')">Ferramentas</button><button onclick="showPage('pirometros')">Pirômetros</button></span>
 <span id="adminNav" class="hidden"><button onclick="showPage('usuarios')">Usuários</button></span>
 <button onclick="showPage('senha')">Alterar minha senha</button>
 </div>
@@ -64,10 +65,28 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 </section>
 
 <section id="estoque" class="page hidden"><div class="card"><h2>Estoque atual</h2>
+<div class="small muted" style="margin-bottom:10px">A base de peças foi reiniciada para a nova implantação. Cadastre os itens primeiro; depois o estoque será formado automaticamente pelas movimentações.</div>
 <div class="filterbar"><input id="buscaEstoque" placeholder="Buscar código, descrição ou restaurante" oninput="renderEstoque()"><select id="filtroRest" onchange="renderEstoque()"><option value="">Todos</option></select><select id="filtroStatus" onchange="renderEstoque()"><option value="">Todos os status</option><option>OK</option><option>EXCESSO</option><option>CRÍTICO</option></select></div>
-<div style="overflow:auto"><table><thead><tr><th>PDV</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="estoqueBody"></tbody></table></div></div></section>
+<div id="estoqueBaseMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>PDV</th><th>Código</th><th>Descrição</th><th>Atual</th><th>Ideal</th><th>Status</th><th>Ação</th></tr></thead><tbody id="estoqueBody"></tbody></table></div></div>
 
-<section id="mov" class="page hidden"><div class="card"><h2>Nova movimentação</h2>
+<div id="modalEditarEstoque" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;align-items:center;justify-content:center;padding:20px">
+<div class="card" style="width:min(650px,100%);max-height:90vh;overflow:auto">
+<h2>Editar estoque</h2>
+<div id="editarEstoqueItem" class="small muted" style="margin-bottom:12px"></div>
+<div class="grid">
+<div><label>Descrição</label><input id="edDescricao" placeholder="Descrição da peça"></div>
+<div><label>Estoque ideal</label><input id="edIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"></div>
+<div><label>Estoque atual</label><input id="edAtual" type="number" min="0" step="0.01" placeholder="Quantidade atual"></div>
+</div>
+<div id="edAtualInfo" class="small muted"></div>
+<div id="edEstoqueMsg" class="msg hidden"></div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<button type="button" onclick="salvarEdicaoEstoque()" style="background:#d91e18;color:#fff">Salvar alterações</button>
+<button type="button" onclick="fecharEdicaoEstoque()" style="width:auto">Cancelar</button>
+</div>
+</div></div></section>
+
+<section id="mov" class="page hidden"><div class="card"><h2>Nova movimentação</h2><div class="msg okmsg">A base de peças está limpa. Para movimentar uma peça, cadastre-a em <b>Cadastro de Itens</b> e vincule-a ao PDV de origem/destino.</div><div class="muted" style="margin-bottom:10px">O estoque é atualizado automaticamente no momento do lançamento. Para Gestor, a origem fica limitada aos PDVs liberados para ele e o destino pode ser qualquer PDV ativo. Em Entrada com origem e destino, a quantidade sai da origem e entra no destino na mesma movimentação.</div>
 <select id="tipo" onchange="ajustaMov()"><option>Entrada</option><option>Saída</option><option>Transferência</option><option>Ajuste</option></select>
 <select id="origem"></select><select id="destino"></select>
 <select id="movItemTipo" onchange="ajustaTipoItemMov()"><option value="peca">Peça</option><option value="equipamento">Equipamento</option><option value="pirometro">Pirômetro</option></select>
@@ -83,54 +102,95 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <div class="filterbar"><input id="histBusca" placeholder="Buscar item, PDV, motivo ou responsável" oninput="renderHist()"><select id="histTipo" onchange="renderHist()"><option value="">Todos</option><option>Entrada</option><option>Saída</option><option>Transferência</option><option>Ajuste</option></select><select id="histRest" onchange="renderHist()"><option value="">Todos os PDVs</option></select><input id="histDe" type="date" onchange="renderHist()"><input id="histAte" type="date" onchange="renderHist()"></div>
 <div style="overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Descrição</th><th>Origem/Destino</th><th>Qtd.</th><th>Motivo</th><th>Responsável</th></tr></thead><tbody id="histBody"></tbody></table></div></div></section>
 
-<section id="pecasCadastro" class="page hidden"><div class="card"><h2>Cadastro de Itens</h2>
-<div class="grid"><input id="pCodigo" placeholder="Código"><input id="pDescricao" placeholder="Descrição"><input id="pEquipamento" placeholder="Equipamento"><input id="pIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"><input id="pCriticidade" placeholder="Criticidade"><input id="pUnidade" value="UN" placeholder="Unidade"></div>
-<label><b>Pontos de venda da peça</b></label><select id="pRestaurantes" class="multi" multiple></select><div class="small muted">Administrador pode selecionar vários PDVs. Gestor administra somente o PDV ao qual está vinculado.</div>
+<section id="pecasCadastro" class="page hidden"><div class="card"><h2>Cadastro de Itens</h2><div class="msg okmsg">Base de peças limpa para a nova implantação. Use <b>Código</b> como identificador da peça. O estoque será criado automaticamente quando houver vínculo com um PDV e movimentação.</div>
+<div class="grid"><input id="pCodigo" placeholder="Código"><input id="pDescricao" placeholder="Descrição"><input id="pEquipamento" placeholder="Equipamento relacionado (opcional)"><input id="pIdeal" type="number" min="0" step="0.01" placeholder="Quantidade ideal"><input id="pCriticidade" placeholder="Criticidade"><input id="pUnidade" value="UN" placeholder="Unidade"></div>
+<label><b>Restaurantes vinculados</b></label>
+<div style="display:flex;gap:8px;align-items:center">
+<button type="button" onclick="abrirVinculoRestaurantes()" style="width:auto;background:#ffc72c;border-color:#e8b400">Selecionar restaurantes</button>
+<span id="pRestResumo" class="small muted">Nenhum restaurante selecionado</span>
+</div>
+<div class="small muted">O item deve estar vinculado a pelo menos um PDV. Administrador pode selecionar vários PDVs; Gestor pode administrar somente os PDVs liberados para ele.</div>
 <button id="pSalvar" onclick="salvarPeca()">Cadastrar item</button><button id="pCancelar" class="hidden" style="width:auto" onclick="limparPeca()">Cancelar edição</button><div id="pecaMsg" class="msg hidden"></div>
 <div style="overflow:auto"><table><thead><tr><th>Código</th><th>Descrição</th><th>Equipamento</th><th>Ideal</th><th>Criticidade</th><th>Unidade</th><th>PDVs</th><th>Ação</th></tr></thead><tbody id="pecasBody"></tbody></table></div>
 </div></section>
 
 <section id="equipamentos" class="page hidden"><div class="card"><h2>Cadastro de Equipamentos</h2><div class="small muted">Equipamentos são identificados por <b>Número de Série</b>. A movimentação apenas seleciona equipamentos já cadastrados.</div>
 <div class="grid"><input id="eSerie" placeholder="Número de Série"><input id="eNome" placeholder="Nome"><input id="eFabricante" placeholder="Fabricante"><input id="eModelo" placeholder="Modelo"><input id="ePatrimonio" placeholder="Patrimônio"><select id="eRest"></select></div>
+<h3>Pesquisar equipamentos</h3>
+<div class="filterbar">
+<input id="equipBusca" placeholder="Pesquisar por descrição, número de série, fabricante ou modelo" oninput="renderEquipamentos()">
+<select id="equipFiltroRest" onchange="renderEquipamentos()"><option value="">Todos os restaurantes</option></select>
+</div>
 <button id="eSalvar" onclick="salvarEquipamento()">Cadastrar equipamento</button><button id="eCancelar" class="hidden" style="width:auto" onclick="limparEquipamento()">Cancelar edição</button><div id="equipMsg" class="msg hidden"></div>
 <div style="overflow:auto"><table><thead><tr><th>Nº Série</th><th>Nome</th><th>Fabricante</th><th>Modelo</th><th>Patrimônio</th><th>PDV</th><th>Ação</th></tr></thead><tbody id="equipBody"></tbody></table></div></div></section>
 
 <section id="restaurantes" class="page hidden"><div class="card"><h2>Cadastro de Pontos de Venda</h2><div class="grid"><input id="rCodigo" placeholder="Código"><input id="rNome" placeholder="Nome"><input id="rCidade" placeholder="Cidade"><input id="rUf" maxlength="2" placeholder="UF"></div><button onclick="salvarRestaurante()">Cadastrar PDV</button><div id="restMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Código</th><th>Nome</th><th>Cidade</th><th>UF</th><th>Ação</th></tr></thead><tbody id="restBody"></tbody></table></div></div></section>
 
-<section id="ferramentas" class="page hidden"><div class="card"><h2>Controle de Ferramentas</h2><div class="small muted">Colaborador é opcional. Sem colaborador, a ferramenta fica <b>Disponível</b>.</div>
+<section id="ferramentas" class="page hidden"><div class="card"><h2>Controle de Ferramentas</h2><div id="ferrGestorInfo" class="msg okmsg hidden">Como Gestor, você pode somente pesquisar e visualizar as ferramentas cadastradas nos PDVs liberados para o seu usuário. Não é permitido cadastrar, editar, devolver ou excluir ferramentas.</div><div id="ferrCadastroArea"><div class="small muted">Colaborador é opcional. Sem colaborador, a ferramenta fica <b>Disponível</b>.</div>
 <div class="grid"><select id="fColaborador" onchange="ajustaFerramenta()"></select><select id="fRest" onchange="carregarColaboradores()"></select><input id="fData" type="date"><input id="fMarca" placeholder="Marca"><input id="fDesc" placeholder="Descrição"><input id="fQtd" type="number" min="0.01" step="0.01" placeholder="Quantidade"></div>
-<button onclick="salvarFerramenta()">Cadastrar ferramenta</button><button id="fCancelar" class="hidden" style="width:auto" onclick="limparFerramenta()">Cancelar edição</button><div id="ferrMsg" class="msg hidden"></div>
-<div class="filterbar"><input id="fBusca" placeholder="Buscar ferramenta" oninput="renderFerramentas()"><select id="fFiltroRest" onchange="renderFerramentas()"></select></div>
+<button onclick="salvarFerramenta()">Cadastrar ferramenta</button><button id="fCancelar" class="hidden" style="width:auto" onclick="limparFerramenta()">Cancelar edição</button><div id="ferrMsg" class="msg hidden"></div></div>
+<div class="filterbar">
+<input id="fBusca" placeholder="Pesquisar ferramenta / marca" oninput="renderFerramentas()">
+<select id="fFiltroColab" onchange="renderFerramentas()"><option value="">Todos os colaboradores</option></select>
+<select id="fFiltroRest" onchange="renderFerramentas()"><option value="">Todos os restaurantes</option></select>
+<input id="fFiltroDesc" placeholder="Pesquisar descrição" oninput="renderFerramentas()">
+<button id="btnRelatorioFerramentas" style="width:auto;background:#ffc72c;border-color:#e8b400" onclick="gerarRelatorioConsolidadoFuncionario()">📄 Relatório consolidado do funcionário</button>
+</div>
+<div class="small muted" style="margin:8px 0 12px">Selecione um funcionário no filtro para gerar <b>um único relatório</b> com todas as ferramentas atualmente vinculadas a ele.</div>
 <div style="overflow:auto"><table><thead><tr><th>Colaborador</th><th>PDV</th><th>Aquisição</th><th>Marca</th><th>Descrição</th><th>Qtd.</th><th>Status</th><th>Ação</th></tr></thead><tbody id="ferrBody"></tbody></table></div></div></section>
 
 <section id="pirometros" class="page hidden"><div class="card"><h2>Controle de Pirômetros</h2><div class="small muted">Vencimento calculado automaticamente para <b>1 ano</b> após a aferição. Identificador: <b>Número de Série</b>.</div>
 <div class="grid"><select id="piRest"></select><select id="piModelo"><option value="">Fabricante / modelo</option><option>Testo Pirômetro</option><option>Testo Analisador de óleo</option><option>Emerson Pirômetro</option></select><input id="piSerie" placeholder="Número de Série"><input id="piAfer" type="date" onchange="calcPiro()"><input id="piVenc" type="date" readonly></div>
 <button onclick="salvarPiro()">Cadastrar / atualizar</button><button id="piCancelar" class="hidden" style="width:auto" onclick="limparPiro()">Cancelar edição</button><div id="piMsg" class="msg hidden"></div>
+<div class="filterbar" style="margin-top:14px"><input id="piBusca" placeholder="Pesquisar por PDV, modelo ou número de série" oninput="renderPirometros()"><select id="piFiltroStatus" onchange="renderPirometros()"><option value="">Todos os status</option><option value="OK">OK</option><option value="ALERTA">ALERTA</option><option value="VENCIDO">VENCIDO</option></select></div>
+<div class="small muted" style="margin:8px 0 12px">Pirômetros já cadastrados: <b id="piTotal">0</b>. Use a pesquisa para localizar rapidamente um equipamento.</div>
 <div style="overflow:auto"><table><thead><tr><th>PDV</th><th>Modelo</th><th>Série</th><th>Aferição</th><th>Vencimento</th><th>Status</th><th>Ação</th></tr></thead><tbody id="piBody"></tbody></table></div></div></section>
 
-<section id="usuarios" class="page hidden"><div class="card"><h2>Cadastro de Usuários</h2><div class="grid"><input id="uNome" placeholder="Nome"><input id="uEmail" type="email" placeholder="E-mail"><input id="uSenha" type="password" placeholder="Senha inicial"><select id="uPerfil"><option>Operacional</option><option>Gestor</option><option>Administrador</option></select><select id="uRest"></select></div><button onclick="salvarUsuario()">Cadastrar usuário</button><div id="uMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>PDV</th><th>Status</th><th>Ação</th></tr></thead><tbody id="uBody"></tbody></table></div></div></section>
+<section id="usuarios" class="page hidden"><div class="card"><h2>Cadastro de Usuários</h2><div class="grid"><input id="uNome" placeholder="Nome"><input id="uEmail" type="email" placeholder="E-mail"><input id="uSenha" type="password" placeholder="Senha inicial"><select id="uPerfil"><option>Operacional</option><option>Gestor</option><option>Administrador</option></select></div><div style="margin:8px 0"><button type="button" onclick="abrirVinculoUsuario()" style="width:auto;background:#ffc72c;border-color:#e8b400">Liberar PDVs</button> <span id="uRestResumo" class="small muted">Nenhum PDV selecionado</span></div><button id="uSalvar" onclick="salvarUsuario()">Cadastrar usuário</button><button id="uCancelar" class="hidden" style="width:auto" onclick="limparUsuario()">Cancelar edição</button><div class="small muted" style="margin:8px 0">Para Gestor, selecione todos os PDVs que ele poderá administrar. O primeiro PDV selecionado fica como vínculo principal.</div><div id="uMsg" class="msg hidden"></div><div style="overflow:auto"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>PDVs liberados</th><th>Status</th><th>Ação</th></tr></thead><tbody id="uBody"></tbody></table></div></div></section>
 
+<div id="modalVinculoUsuario" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;align-items:center;justify-content:center;padding:20px">
+<div class="card" style="width:min(650px,100%);max-height:85vh;overflow:auto">
+<h2>Liberar PDVs para o usuário</h2>
+<div class="small muted">Selecione um ou vários PDVs. Para Gestor, estes serão os PDVs liberados para administração.</div>
+<input id="buscaVinculoUsuario" placeholder="Buscar PDV..." oninput="renderListaVinculoUsuario()">
+<div id="listaVinculoUsuario" style="border:1px solid #ddd;border-radius:8px;padding:8px;max-height:380px;overflow:auto"></div>
+<div id="vinculoUsuarioMsg" class="msg hidden"></div>
+<div style="display:flex;gap:8px"><button type="button" onclick="confirmarVinculoUsuario()" style="background:#d91e18;color:#fff">Confirmar PDVs</button><button type="button" onclick="fecharVinculoUsuario()" style="width:auto">Cancelar</button></div>
+</div></div>
+
+<div id="modalVinculoRest" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px">
+<div class="card" style="width:min(650px,100%);max-height:85vh;overflow:auto">
+<h2>Vincular peça aos restaurantes</h2>
+<div class="small muted">Selecione um ou vários restaurantes onde esta peça ficará disponível.</div>
+<input id="buscaVinculoRest" placeholder="Buscar restaurante..." oninput="renderListaVinculoRest()">
+<div id="listaVinculoRest" style="border:1px solid #ddd;border-radius:8px;padding:8px;max-height:380px;overflow:auto"></div>
+<div id="vinculoRestMsg" class="msg hidden"></div>
+<div style="display:flex;gap:8px"><button type="button" onclick="confirmarVinculoRestaurantes()" style="background:#d91e18;color:#fff">Confirmar vínculos</button><button type="button" onclick="fecharVinculoRestaurantes()" style="width:auto">Cancelar</button></div>
+</div></div>
 <section id="senha" class="page hidden"><div class="card"><h2>Alterar minha senha</h2><div class="grid"><input id="senhaAtual" type="password" placeholder="Senha atual"><input id="senhaNova" type="password" placeholder="Nova senha"><input id="senhaConf" type="password" placeholder="Confirmar nova senha"></div><button onclick="alterarSenha()">Salvar nova senha</button><div id="senhaMsg" class="msg hidden"></div></div></section>
 </main></section>
 
 <script>
-const cfg=window.INVENTARIO_CONFIG;
+const cfg={SUPABASE_URL:window.SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY:window.SUPABASE_ANON_KEY};
 const sb=supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY);
-let usuario=null,perfil=null,restaurantes=[],pecas=[],pecasRest=[],usuarios=[],movs=[],estoque=[],equipamentos=[],pirometros=[],ferramentas=[];
-let pecaEdit=null,equipEdit=null,ferrEdit=null,piroEdit=null;
+let usuario=null,perfil=null,restaurantes=[],pecas=[],pecasRest=[],usuarios=[],movs=[],estoque=[],equipamentos=[],pirometros=[],ferramentas=[],usuarioRestaurantes=[];
+let pecaEdit=null,equipEdit=null,ferrEdit=null,piroEdit=null,usuarioEdit=null;
+let vinculosUsuarioSelecionados=new Set();
 
 const $=id=>document.getElementById(id);
 function msg(id,t,good=false){const e=$(id);if(!e)return;e.textContent=t;e.className='msg '+(good?'okmsg':'');}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function isAdmin(){return perfil==='Administrador'} function isGestor(){return perfil==='Gestor'||perfil==='Administrador'}
-function meuRest(){return usuarios.find(u=>u.id===usuario?.id)?.restaurante_id||null}
+function meusRestIds(){const ids=usuarioRestaurantes.filter(x=>x.ativo!==false&&x.usuario_id===usuario?.id).map(x=>x.restaurante_id);const prim=usuarios.find(u=>u.id===usuario?.id)?.restaurante_id;if(prim&&!ids.includes(prim))ids.unshift(prim);return [...new Set(ids)]}
+function meuRest(){return meusRestIds()[0]||null}
+function temMeuRest(id){return isAdmin()||meusRestIds().includes(id)}
 
 async function login(){const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)return msg('loginMsg',error.message);await iniciar(data.user)}
 async function logout(){await sb.auth.signOut();location.reload()}
 async function iniciar(u){usuario=u;const {data:p}=await sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').eq('id',u.id).maybeSingle();if(!p||!p.ativo){await sb.auth.signOut();return msg('loginMsg','Usuário sem permissão ou inativo.')}perfil=p.perfil;$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('userInfo').textContent=`${p.nome} • ${p.perfil}`;$('gestorNav').classList.toggle('hidden',!isGestor());$('adminNav').classList.toggle('hidden',!isAdmin());await carregar();showPage('dashboard')}
 
 async function carregar(){
-const [r,p,u,m,e,eq,pi,fe,pr]=await Promise.all([
+const [r,p,u,m,e,eq,pi,fe,pr,ur]=await Promise.all([
 sb.from('restaurantes').select('*').order('codigo'),
 sb.from('pecas').select('*').order('codigo'),
 sb.from('usuarios').select('id,nome,email,perfil,restaurante_id,ativo').order('nome'),
@@ -139,24 +199,26 @@ sb.from('estoque_status').select('*'),
 sb.from('equipamentos').select('*').order('numero_serie'),
 sb.from('pirometros_alertas').select('*').order('data_vencimento'),
 sb.from('ferramentas').select('*,colaborador:usuarios!ferramentas_colaborador_id_fkey(nome,email),restaurante:restaurantes!ferramentas_restaurante_id_fkey(codigo,nome)').order('created_at',{ascending:false}),
-sb.from('pecas_restaurantes').select('*')
+sb.from('pecas_restaurantes').select('*'),
+isAdmin()?sb.from('usuario_restaurantes').select('*'):sb.from('usuario_restaurantes').select('*').eq('usuario_id',usuario?.id)
 ]);
-restaurantes=r.data||[];pecas=p.data||[];usuarios=u.data||[];movs=m.data||[];estoque=e.data||[];equipamentos=eq.data||[];pirometros=pi.data||[];ferramentas=fe.data||[];pecasRest=pr.data||[];
-const errs=[r,p,u,m,e,eq,pi,fe,pr].filter(x=>x.error);if(errs.length)console.error(errs);
+restaurantes=r.data||[];pecas=p.data||[];usuarios=u.data||[];movs=m.data||[];estoque=e.data||[];equipamentos=eq.data||[];pirometros=pi.data||[];ferramentas=fe.data||[];pecasRest=pr.data||[];usuarioRestaurantes=ur.data||[];
+const errs=[r,p,u,m,e,eq,pi,fe,pr,ur].filter(x=>x.error);if(errs.length)console.error(errs);
+if(errs.length)console.error(errs);
 $('kPecas').textContent=pecas.filter(x=>x.ativo!==false).length;$('kRest').textContent=restaurantes.filter(x=>x.ativo!==false).length;$('kMov').textContent=m.count??movs.length;
 $('kCrit').textContent=estoque.filter(x=>x.status==='CRÍTICO').length;$('kExcesso').textContent=estoque.filter(x=>x.status==='EXCESSO').length;$('kPiroOk').textContent=pirometros.filter(x=>x.status==='OK').length;$('kPiroVencido').textContent=pirometros.filter(x=>x.status==='VENCIDO').length;
-fillRest();fillMovement();fillHistoryFilters();renderAll();
+fillRest();fillMovement();fillHistoryFilters();$('equipFiltroRest').innerHTML='<option value="">Todos os restaurantes</option>'+restaurantes.filter(x=>x.ativo!==false&&(isAdmin()||temMeuRest(x.id))).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');renderAll();atualizarResumoVinculos();
 }
 function fillRest(){
 const active=restaurantes.filter(x=>x.ativo!==false);
-$('filtroRest').innerHTML='<option value="">Todos</option>'+active.map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)}</option>`).join('');
-$('origem').innerHTML='<option value="">Origem</option>'+active.map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
+$('filtroRest').innerHTML='<option value="">Todos</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)}</option>`).join('');
+$('origem').innerHTML='<option value="">Origem</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
 $('destino').innerHTML='<option value="">Destino</option>'+active.map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
-$('eRest').innerHTML='<option value="">Ponto de venda</option>'+active.filter(x=>isAdmin()||x.id===meuRest()).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
-$('piRest').innerHTML='<option value="">Localização — Ponto de venda</option>'+active.filter(x=>isAdmin()||x.id===meuRest()).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
-$('uRest').innerHTML='<option value="">Restaurante (opcional)</option>'+active.map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
-$('fRest').innerHTML='<option value="">Restaurante</option>'+active.filter(x=>isAdmin()||x.id===meuRest()).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
-$('fFiltroRest').innerHTML='<option value="">Todos os restaurantes</option>'+active.map(x=>`<option value="${x.id}">${esc(x.codigo)}</option>`).join('');
+$('eRest').innerHTML='<option value="">Ponto de venda</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
+$('piRest').innerHTML='<option value="">Localização — Ponto de venda</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
+$('fRest').innerHTML='<option value="">Restaurante</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${x.id}">${esc(x.codigo)} - ${esc(x.nome)}</option>`).join('');
+$('fFiltroRest').innerHTML='<option value="">Todos os restaurantes liberados</option>'+active.filter(x=>isAdmin()||temMeuRest(x.id)).map(x=>`<option value="${x.id}">${esc(x.codigo)}</option>`).join('');
+$('fFiltroColab').innerHTML='<option value="">Todos os colaboradores</option>'+usuarios.filter(u=>u.ativo!==false).sort((a,b)=>(a.nome||a.email||'').localeCompare(b.nome||b.email||'')).map(u=>`<option value="${u.id}">${esc(u.nome||u.email)}</option>`).join('');
 $('histRest').innerHTML='<option value="">Todos os PDVs</option>'+active.map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)}</option>`).join('');
 prepararPecaRest();
 }
@@ -166,16 +228,75 @@ $('pecasLista').innerHTML=pecas.filter(x=>x.ativo!==false).map(x=>`<option value
 $('equipamentoMov').innerHTML='<option value="">Equipamento — selecione pelo número de série</option>'+equipamentos.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${esc(x.numero_serie)} - ${esc(x.nome)}</option>`).join('');
 $('pirometroMov').innerHTML='<option value="">Pirômetro — selecione pelo número de série</option>'+pirometros.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}">${esc(x.numero_serie)} - ${esc(x.fabricante_modelo)}</option>`).join('');
 }
-function prepararPecaRest(){const s=$('pRestaurantes');if(!s)return;const old=[...s.selectedOptions].map(x=>x.value);s.innerHTML=restaurantes.filter(r=>r.ativo!==false&&(isAdmin()||r.id===meuRest())).map(r=>`<option value="${r.id}">${esc(r.codigo)} - ${esc(r.nome)}</option>`).join('');old.forEach(id=>{const o=[...s.options].find(x=>x.value===id);if(o)o.selected=true})}
+let vinculosPecaSelecionados=new Set();
+function prepararPecaRest(){atualizarResumoVinculos()}
+function atualizarResumoVinculos(){const nomes=Array.from(vinculosPecaSelecionados).map(id=>restaurantes.find(r=>r.id===id)).filter(Boolean).map(r=>r.codigo);$('pRestResumo').textContent=nomes.length?`${nomes.length} restaurante(s): ${nomes.join(', ')}`:'Nenhum restaurante selecionado'}
+function abrirVinculoRestaurantes(){if(!isGestor())return;$('modalVinculoRest').classList.remove('hidden');$('modalVinculoRest').style.display='flex';renderListaVinculoRest()}
+function fecharVinculoRestaurantes(){$('modalVinculoRest').classList.add('hidden');$('modalVinculoRest').style.display='none';$('buscaVinculoRest').value='';$('vinculoRestMsg').classList.add('hidden')}
+function renderListaVinculoRest(){const q=($('buscaVinculoRest').value||'').toLowerCase(),mr=meuRest();const lista=restaurantes.filter(r=>r.ativo!==false&&(isAdmin()||temMeuRest(r.id))&&`${r.codigo} ${r.nome} ${r.cidade||''}`.toLowerCase().includes(q));$('listaVinculoRest').innerHTML=lista.map(r=>`<label style="display:flex;gap:8px;align-items:center;padding:9px;border-bottom:1px solid #eee;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" value="${r.id}" ${vinculosPecaSelecionados.has(r.id)?'checked':''} onchange="alternarVinculoRest('${r.id}',this.checked)"><span><b>${esc(r.codigo)}</b> — ${esc(r.nome)}${r.cidade?' • '+esc(r.cidade):''}</span></label>`).join('')||'<div class="small muted">Nenhum restaurante disponível.</div>'}
+function alternarVinculoRest(id,checked){if(checked)vinculosPecaSelecionados.add(id);else vinculosPecaSelecionados.delete(id);atualizarResumoVinculos()}
+function confirmarVinculoRestaurantes(){if(vinculosPecaSelecionados.size===0)return msg('vinculoRestMsg','Selecione pelo menos um restaurante para vincular a peça.');fecharVinculoRestaurantes()}
 function renderAll(){renderEstoque();renderHist();renderPecas();renderEquipamentos();renderRestaurantes();renderFerramentas();renderPirometros();renderUsuarios();renderDashboard();carregarColaboradores()}
 
+function podeEditarEstoque(rid){
+  return isAdmin() || (perfil==='Gestor' && temMeuRest(rid)) || (perfil==='Operacional' && rid===meuRest());
+}
 function renderEstoque(){
-const q=($('buscaEstoque').value||'').toLowerCase(),fr=$('filtroRest').value,fs=$('filtroStatus').value;
-$('estoqueBody').innerHTML=estoque.filter(x=>(`${x.restaurante} ${x.codigo_peca} ${x.descricao}`.toLowerCase().includes(q))&&(!fr||x.restaurante===fr)&&(!fs||x.status===fs)).slice(0,1000).map(x=>{
-const r=restaurantes.find(a=>a.codigo===x.restaurante),p=pecas.find(a=>a.codigo===x.codigo_peca);let ac='—';
-if(p&&(isAdmin()||perfil==='Gestor'||(perfil==='Operacional'&&r?.id===meuRest())))ac=`<button style="width:auto" onclick="editarEstoque('${r?.id}','${p.id}',${Number(x.estoque_atual)||0},'${esc(x.restaurante)}','${esc(x.codigo_peca)}')">Editar estoque</button>`;
-return `<tr><td>${esc(x.restaurante)}</td><td>${esc(x.codigo_peca)}</td><td>${esc(x.descricao)}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='EXCESSO'?'att':'ok'}">${esc(x.status)}</span></td><td>${ac}</td></tr>`}).join('')||'<tr><td colspan="7">Nenhum registro.</td></tr>'}
-async function editarEstoque(rid,pid,atual,rc,pc){if(perfil==='Operacional'&&rid!==meuRest())return alert('Acesso negado.');const v=prompt(`Novo estoque físico\n${rc} — ${pc}\nAtual: ${atual}`);if(v===null)return;const novo=Number(String(v).replace(',','.'));if(!Number.isFinite(novo)||novo<0)return alert('Quantidade inválida.');const dif=novo-atual;if(!dif)return alert('Nenhum ajuste necessário.');const mot=prompt('Motivo do ajuste:');if(!mot?.trim())return alert('Motivo obrigatório.');const {error}=await sb.from('movimentacoes').insert({tipo:'Ajuste',origem_id:rid,peca_id:pid,quantidade:dif,motivo:mot.trim(),responsavel_id:usuario.id});if(error)return alert('Erro: '+error.message);await carregar()}
+  const q=($('buscaEstoque').value||'').toLowerCase(),fr=$('filtroRest').value,fs=$('filtroStatus').value;
+  $('estoqueBaseMsg').classList.toggle('hidden', estoque.length>0); if(estoque.length===0) $('estoqueBaseMsg').textContent='A base de estoque está limpa. Cadastre itens e vincule-os aos PDVs para começar.';
+  $('estoqueBody').innerHTML=estoque.filter(x=>{
+    const r=restaurantes.find(a=>a.codigo===x.restaurante);
+    const permitido=isAdmin() || (perfil==='Gestor' && temMeuRest(r?.id)) || (perfil==='Operacional' && r?.id===meuRest());
+    return permitido && (`${x.restaurante} ${x.codigo_peca} ${x.descricao}`.toLowerCase().includes(q)) &&
+      (!fr||x.restaurante===fr) && (!fs||x.status===fs);
+  }).slice(0,1000).map(x=>{
+    const r=restaurantes.find(a=>a.codigo===x.restaurante),p=pecas.find(a=>a.codigo===x.codigo_peca);
+    const ac=p&&podeEditarEstoque(r?.id)?`<button style="width:auto" onclick="abrirEdicaoEstoque('${r?.id}','${p.id}',${Number(x.estoque_atual)||0},'${esc(x.restaurante)}','${esc(x.codigo_peca)}')">Editar estoque</button>`:'—';
+    return `<tr><td>${esc(x.restaurante)}</td><td>${esc(x.codigo_peca)}</td><td>${esc(x.descricao)}</td><td>${x.estoque_atual}</td><td>${x.quantidade_ideal}</td><td><span class="badge ${x.status==='CRÍTICO'?'crit':x.status==='EXCESSO'?'att':'ok'}">${esc(x.status)}</span></td><td>${ac}</td></tr>`
+  }).join('')||'<tr><td colspan="7"><b>Estoque vazio.</b> Cadastre os itens e faça a primeira movimentação para iniciar o saldo.</td></tr>'
+}
+let edEstoqueCtx=null;
+function abrirEdicaoEstoque(rid,pid,atual,rc,pc){
+  if(!podeEditarEstoque(rid))return alert('Acesso negado.');
+  const p=pecas.find(x=>x.id===pid);
+  if(!p)return alert('Peça não encontrada.');
+  edEstoqueCtx={rid,pid,atual,rc,pc};
+  $('editarEstoqueItem').textContent=`${rc} • ${pc} — ${p.descricao||''}`;
+  $('edDescricao').value=p.descricao||'';
+  $('edIdeal').value=p.quantidade_ideal??0;
+  $('edAtual').value=atual;
+  $('edAtualInfo').textContent=`Estoque atual no banco: ${atual}. A diferença será registrada como Ajuste no histórico.`;
+  $('edEstoqueMsg').classList.add('hidden');
+  $('modalEditarEstoque').classList.remove('hidden');
+  $('modalEditarEstoque').style.display='flex';
+}
+function fecharEdicaoEstoque(){
+  $('modalEditarEstoque').classList.add('hidden');
+  $('modalEditarEstoque').style.display='none';
+  edEstoqueCtx=null;
+}
+async function salvarEdicaoEstoque(){
+  if(!edEstoqueCtx)return;
+  const desc=$('edDescricao').value.trim(),ideal=Number($('edIdeal').value),novo=Number($('edAtual').value);
+  if(!desc)return msg('edEstoqueMsg','A descrição é obrigatória.');
+  if(!Number.isFinite(ideal)||ideal<0)return msg('edEstoqueMsg','Estoque ideal inválido.');
+  if(!Number.isFinite(novo)||novo<0)return msg('edEstoqueMsg','Estoque atual inválido.');
+  const {rid,pid,atual,rc,pc}=edEstoqueCtx;
+  if(!podeEditarEstoque(rid))return msg('edEstoqueMsg','Acesso negado.');
+  const {error:e1}=await sb.from('pecas').update({descricao:desc,quantidade_ideal:ideal}).eq('id',pid);
+  if(e1)return msg('edEstoqueMsg','Erro ao atualizar peça: '+e1.message);
+  const dif=novo-Number(atual||0);
+  if(dif!==0){
+    const {error:e2}=await sb.from('movimentacoes').insert({
+      tipo:'Ajuste',origem_id:rid,peca_id:pid,quantidade:dif,
+      motivo:`Edição do estoque atual — ${rc} / ${pc}`,
+      responsavel_id:usuario.id
+    });
+    if(e2)return msg('edEstoqueMsg','Descrição/ideal foram salvos, mas o ajuste do estoque não foi registrado: '+e2.message);
+  }
+  fecharEdicaoEstoque();
+  await carregar();
+}
 
 function renderDashboard(){
 const crit=estoque.filter(x=>x.status==='CRÍTICO'),exc=estoque.filter(x=>x.status==='EXCESSO'),pa=pirometros.filter(x=>x.status==='ALERTA'||x.status==='VENCIDO');
@@ -187,7 +308,7 @@ $('dashExcFull').innerHTML=exc.slice(0,20).map(x=>`<span class="badge att">${esc
 $('dashPiroFull').innerHTML=pa.map(x=>`<div><span class="badge ${x.status==='VENCIDO'?'crit':'att'}">${esc(x.status)}</span> ${esc(x.localizacao_codigo)} — série ${esc(x.numero_serie)} — vence ${fmt(x.data_vencimento)}</div>`).join('')||'✓'}
 function fmt(v){if(!v)return'—';const [y,m,d]=String(v).slice(0,10).split('-');return`${d}/${m}/${y}`}
 
-function ajustaMov(){const t=$('tipo').value;$('origem').style.display=t==='Entrada'?'none':'block';$('destino').style.display=t==='Saída'||t==='Ajuste'?'none':'block';ajustaTipoItemMov()}
+function ajustaMov(){const t=$('tipo').value;$('origem').style.display=t==='Ajuste'?'block':'block';$('destino').style.display=t==='Saída'||t==='Ajuste'?'none':'block';ajustaTipoItemMov()}
 function ajustaTipoItemMov(){const k=$('movItemTipo').value;$('movPecaWrap').classList.toggle('hidden',k!=='peca');$('movEquipWrap').classList.toggle('hidden',k!=='equipamento');$('movPiroWrap').classList.toggle('hidden',k!=='pirometro');$('quantidade').disabled=k!=='peca';if(k!=='peca')$('quantidade').value='1'}
 async function salvarMov(){
 const t=$('tipo').value,k=$('movItemTipo').value,mot=$('motivo').value.trim(),pid=k==='peca'?$ ('peca').value:null;
@@ -196,12 +317,13 @@ if(k==='peca'&&(!pecaId||!q||q<=0))return msg('movMsg','Selecione a peça e info
 if(k==='equipamento'&&!equipId)return msg('movMsg','Selecione o equipamento pelo número de série.');
 if(k==='pirometro'&&!piroId)return msg('movMsg','Selecione o pirômetro pelo número de série.');
 if(!mot)return msg('movMsg','Informe o motivo / observação.');
-if(t==='Entrada'&&!$('destino').value)return msg('movMsg','Selecione o restaurante de destino.');
+if(t==='Entrada'&&(!$('origem').value||!$('destino').value||$('origem').value===$('destino').value))return msg('movMsg','Na entrada, selecione origem e destino diferentes.');
 if(t==='Saída'&&!$('origem').value)return msg('movMsg','Selecione o restaurante de origem.');
 if(t==='Transferência'&&(!$('origem').value||!$('destino').value||$('origem').value===$('destino').value))return msg('movMsg','Selecione origem e destino diferentes.');
 if(t==='Ajuste'&&!$('origem').value)return msg('movMsg','Selecione o restaurante do ajuste.');
+if(!isAdmin()&&perfil==='Gestor'&&!temMeuRest($('origem').value))return msg('movMsg','Acesso negado: a origem deve ser um PDV liberado para este Gestor.');
 if(k!=='peca')q=1;
-const row={tipo:t==='Saída'?'Retirada':t,origem_id:t==='Entrada'?null:$('origem').value||null,destino_id:(t==='Saída'||t==='Ajuste')?null:$('destino').value||null,peca_id:pecaId,equipamento_id:equipId,pirometro_id:piroId,quantidade:q,motivo:mot,responsavel_id:usuario.id};
+const row={tipo:t==='Saída'?'Retirada':t,origem_id:$('origem').value||null,destino_id:(t==='Saída'||t==='Ajuste')?null:$('destino').value||null,peca_id:pecaId,equipamento_id:equipId,pirometro_id:piroId,quantidade:q,motivo:mot,responsavel_id:usuario.id};
 const {error}=await sb.from('movimentacoes').insert(row);if(error)return msg('movMsg','Erro: '+error.message);msg('movMsg','Movimentação registrada com sucesso.',true);$('quantidade').value='';$('motivo').value='';$('pecaBusca').value='';$('peca').value='';$('equipamentoMov').value='';$('pirometroMov').value='';await carregar()}
 $('pecaBusca').addEventListener('input',()=>{const t=$('pecaBusca').value.toLowerCase();const x=pecas.find(p=>p.ativo!==false&&(`${p.codigo} - ${p.descricao}`).toLowerCase()===t)||pecas.find(p=>p.ativo!==false&&String(p.codigo).toLowerCase()===t);$('peca').value=x?.id||''});
 $('pecaBusca').addEventListener('blur',()=>{const t=$('pecaBusca').value.trim().toLowerCase();const x=pecas.find(p=>p.ativo!==false&&(`${p.codigo} - ${p.descricao}`).toLowerCase()===t)||pecas.find(p=>p.ativo!==false&&String(p.codigo).toLowerCase()===t)||pecas.find(p=>p.ativo!==false&&String(p.descricao).toLowerCase().includes(t));if(x){$('peca').value=x.id;$('pecaBusca').value=`${x.codigo} - ${x.descricao}`}})
@@ -216,48 +338,91 @@ const codigo=$('pCodigo').value.trim(),descricao=$('pDescricao').value.trim(),eq
 if(!codigo||!descricao||ideal<0)return msg('pecaMsg','Informe código, descrição e quantidade ideal válida.');
 const payload={codigo,descricao,equipamento:equipamento||null,quantidade_ideal:ideal,criticidade,unidade};
 const q=pecaEdit?await sb.from('pecas').update(payload).eq('id',pecaEdit).select().maybeSingle():await sb.from('pecas').insert({...payload,ativo:true}).select().maybeSingle();if(q.error)return msg('pecaMsg','Erro: '+q.error.message);
-const id=pecaEdit||q.data?.id,sel=[...$('pRestaurantes').selectedOptions].map(o=>o.value),mr=meuRest();
+const id=pecaEdit||q.data?.id,sel=Array.from(vinculosPecaSelecionados),mr=meuRest();
+if(sel.length===0)return msg('pecaMsg','É obrigatório vincular a peça a pelo menos um restaurante.');
 if(isAdmin()){const d=await sb.from('pecas_restaurantes').delete().eq('peca_id',id);if(d.error)return msg('pecaMsg','Erro nas associações: '+d.error.message);if(sel.length){const a=await sb.from('pecas_restaurantes').insert(sel.map(restaurante_id=>({peca_id:id,restaurante_id,ativo:true})));if(a.error)return msg('pecaMsg','Erro nas associações: '+a.error.message)}}
-else if(mr){const d=await sb.from('pecas_restaurantes').delete().eq('peca_id',id).eq('restaurante_id',mr);if(d.error)return msg('pecaMsg','Erro na associação: '+d.error.message);if(sel.includes(mr)){const a=await sb.from('pecas_restaurantes').upsert({peca_id:id,restaurante_id:mr,ativo:true});if(a.error)return msg('pecaMsg','Erro na associação: '+a.error.message)}}
+else {const permitidos=new Set(meusRestIds()),selPermitidos=sel.filter(x=>permitidos.has(x));for(const rid of permitidos){const d=await sb.from('pecas_restaurantes').delete().eq('peca_id',id).eq('restaurante_id',rid);if(d.error)return msg('pecaMsg','Erro na associação: '+d.error.message)}if(selPermitidos.length){const a=await sb.from('pecas_restaurantes').insert(selPermitidos.map(restaurante_id=>({peca_id:id,restaurante_id,ativo:true})));if(a.error)return msg('pecaMsg','Erro nas associações: '+a.error.message)}}
 msg('pecaMsg',pecaEdit?'Item atualizado com sucesso.':'Item cadastrado com sucesso.',true);limparPeca();await carregar()}
-function limparPeca(){pecaEdit=null;$('pCodigo').value='';$('pDescricao').value='';$('pEquipamento').value='';$('pIdeal').value='';$('pCriticidade').value='';$('pUnidade').value='UN';[...$('pRestaurantes').options].forEach(o=>o.selected=false);$('pCancelar').classList.add('hidden');$('pSalvar').textContent='Cadastrar item'}
-function renderPecas(){if(!isGestor())return;const mr=meuRest(),lista=pecas.filter(p=>p.ativo!==false&&(isAdmin()||pecasRest.some(a=>a.peca_id===p.id&&a.restaurante_id===mr&&a.ativo!==false)));$('pecasBody').innerHTML=lista.map(p=>{const pdvs=pecasRest.filter(a=>a.peca_id===p.id&&a.ativo!==false).map(a=>restaurantes.find(r=>r.id===a.restaurante_id)?.codigo).filter(Boolean).join(', ');return`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.equipamento||'—')}</td><td>${p.quantidade_ideal}</td><td>${esc(p.criticidade||'—')}</td><td>${esc(p.unidade||'UN')}</td><td>${esc(pdvs||'Sem PDV')}</td><td class="actions"><button onclick="editarPeca('${p.id}')">Editar</button><button onclick="desativarPeca('${p.id}')">Desativar</button></td></tr>`}).join('')||'<tr><td colspan="8">Nenhum item.</td></tr>'}
-function editarPeca(id){const p=pecas.find(x=>x.id===id);if(!p)return;const mr=meuRest();if(!isAdmin()&&!pecasRest.some(a=>a.peca_id===id&&a.restaurante_id===mr&&a.ativo!==false))return msg('pecaMsg','Acesso restrito ao restaurante vinculado.');pecaEdit=id;$('pCodigo').value=p.codigo||'';$('pDescricao').value=p.descricao||'';$('pEquipamento').value=p.equipamento||'';$('pIdeal').value=p.quantidade_ideal??0;$('pCriticidade').value=p.criticidade||'';$('pUnidade').value=p.unidade||'UN';prepararPecaRest();[...$('pRestaurantes').options].forEach(o=>o.selected=pecasRest.some(a=>a.peca_id===id&&a.restaurante_id===o.value&&a.ativo!==false));$('pCancelar').classList.remove('hidden');$('pSalvar').textContent='Salvar alterações';showPage('pecasCadastro')}
+function limparPeca(){pecaEdit=null;$('pCodigo').value='';$('pDescricao').value='';$('pEquipamento').value='';$('pIdeal').value='';$('pCriticidade').value='';$('pUnidade').value='UN';vinculosPecaSelecionados=new Set();atualizarResumoVinculos();$('pCancelar').classList.add('hidden');$('pSalvar').textContent='Cadastrar item'}
+function renderPecas(){if(!isGestor())return;const mr=meuRest(),lista=pecas.filter(p=>p.ativo!==false&&(isAdmin()||pecasRest.some(a=>a.peca_id===p.id&&a.restaurante_id===mr&&a.ativo!==false)));$('pecasBody').innerHTML=lista.map(p=>{const pdvs=pecasRest.filter(a=>a.peca_id===p.id&&a.ativo!==false).map(a=>restaurantes.find(r=>r.id===a.restaurante_id)?.codigo).filter(Boolean).join(', ');return`<tr><td>${esc(p.codigo)}</td><td>${esc(p.descricao)}</td><td>${esc(p.equipamento||'—')}</td><td>${p.quantidade_ideal}</td><td>${esc(p.criticidade||'—')}</td><td>${esc(p.unidade||'UN')}</td><td>${esc(pdvs||'Sem PDV')}</td><td class="actions"><button onclick="editarPeca('${p.id}')">Editar</button><button onclick="desativarPeca('${p.id}')">Desativar</button></td></tr>`}).join('')||'<tr><td colspan="8"><b>Nenhum item cadastrado.</b> A base está limpa para a nova implantação.</td></tr>'}
+function editarPeca(id){const p=pecas.find(x=>x.id===id);if(!p)return;const mr=meuRest();if(!isAdmin()&&!pecasRest.some(a=>a.peca_id===id&&a.restaurante_id===mr&&a.ativo!==false))return msg('pecaMsg','Acesso restrito ao restaurante vinculado.');pecaEdit=id;$('pCodigo').value=p.codigo||'';$('pDescricao').value=p.descricao||'';$('pEquipamento').value=p.equipamento||'';$('pIdeal').value=p.quantidade_ideal??0;$('pCriticidade').value=p.criticidade||'';$('pUnidade').value=p.unidade||'UN';vinculosPecaSelecionados=new Set(pecasRest.filter(a=>a.peca_id===id&&a.ativo!==false).map(a=>a.restaurante_id));atualizarResumoVinculos();$('pCancelar').classList.remove('hidden');$('pSalvar').textContent='Salvar alterações';showPage('pecasCadastro')}
 async function desativarPeca(id){if(!confirm('Desativar este item? O histórico será preservado.'))return;const{error}=await sb.from('pecas').update({ativo:false}).eq('id',id);if(error)return msg('pecaMsg','Erro: '+error.message);await carregar()}
 
 async function salvarEquipamento(){
-if(!isGestor())return;const numero_serie=$('eSerie').value.trim(),nome=$('eNome').value.trim(),fabricante=$('eFabricante').value.trim()||null,modelo=$('eModelo').value.trim()||null,patrimonio=$('ePatrimonio').value.trim()||null,restaurante_id=$('eRest').value||null;if(!numero_serie||!nome||!restaurante_id)return msg('equipMsg','Número de série, nome e ponto de venda são obrigatórios.');if(!isAdmin()&&restaurante_id!==meuRest())return msg('equipMsg','Gestor restrito ao restaurante vinculado.');const payload={numero_serie,nome,fabricante,modelo,patrimonio,restaurante_id,ativo:true};const q=equipEdit?await sb.from('equipamentos').update(payload).eq('id',equipEdit):await sb.from('equipamentos').insert(payload);if(q.error)return msg('equipMsg','Erro: '+q.error.message);msg('equipMsg',equipEdit?'Equipamento atualizado com sucesso.':'Equipamento cadastrado com sucesso.',true);limparEquipamento();await carregar()}
+if(!isGestor())return;const numero_serie=$('eSerie').value.trim(),nome=$('eNome').value.trim(),fabricante=$('eFabricante').value.trim()||null,modelo=$('eModelo').value.trim()||null,patrimonio=$('ePatrimonio').value.trim()||null,restaurante_id=$('eRest').value||null;if(!numero_serie||!nome||!restaurante_id)return msg('equipMsg','Número de série, nome e ponto de venda são obrigatórios.');if(!isAdmin()&&!temMeuRest(restaurante_id))return msg('equipMsg','Gestor restrito ao restaurante vinculado.');const payload={numero_serie,nome,fabricante,modelo,patrimonio,restaurante_id,ativo:true};const q=equipEdit?await sb.from('equipamentos').update(payload).eq('id',equipEdit):await sb.from('equipamentos').insert(payload);if(q.error)return msg('equipMsg','Erro: '+q.error.message);msg('equipMsg',equipEdit?'Equipamento atualizado com sucesso.':'Equipamento cadastrado com sucesso.',true);limparEquipamento();await carregar()}
 function limparEquipamento(){equipEdit=null;$('eSerie').value='';$('eNome').value='';$('eFabricante').value='';$('eModelo').value='';$('ePatrimonio').value='';$('eRest').value=meuRest()||'';$('eCancelar').classList.add('hidden');$('eSalvar').textContent='Cadastrar equipamento'}
-function renderEquipamentos(){if(!isGestor())return;const list=equipamentos.filter(x=>x.ativo!==false&&(isAdmin()||x.restaurante_id===meuRest()));$('equipBody').innerHTML=list.map(x=>{const r=restaurantes.find(a=>a.id===x.restaurante_id);return`<tr><td>${esc(x.numero_serie)}</td><td>${esc(x.nome)}</td><td>${esc(x.fabricante||'—')}</td><td>${esc(x.modelo||'—')}</td><td>${esc(x.patrimonio||'—')}</td><td>${esc(r?.codigo||'—')}</td><td class="actions"><button onclick="editarEquipamento('${x.id}')">Editar</button><button onclick="desativarEquipamento('${x.id}')">Desativar</button></td></tr>`}).join('')||'<tr><td colspan="7">Nenhum equipamento.</td></tr>'}
-function editarEquipamento(id){const x=equipamentos.find(a=>a.id===id);if(!x)return;if(!isAdmin()&&x.restaurante_id!==meuRest())return alert('Acesso restrito.');equipEdit=id;$('eSerie').value=x.numero_serie||'';$('eNome').value=x.nome||'';$('eFabricante').value=x.fabricante||'';$('eModelo').value=x.modelo||'';$('ePatrimonio').value=x.patrimonio||'';$('eRest').value=x.restaurante_id||'';$('eCancelar').classList.remove('hidden');$('eSalvar').textContent='Salvar alterações';showPage('equipamentos')}
+function renderEquipamentos(){if(!isGestor())return;const q=($('equipBusca')?.value||'').toLowerCase(),fr=$('equipFiltroRest')?.value||'';const list=equipamentos.filter(x=>{const r=restaurantes.find(a=>a.id===x.restaurante_id);const texto=`${x.numero_serie||''} ${x.nome||''} ${x.fabricante||''} ${x.modelo||''} ${x.patrimonio||''}`.toLowerCase();return x.ativo!==false&&(isAdmin()||temMeuRest(x.restaurante_id))&&(!q||texto.includes(q))&&(!fr||x.restaurante_id===fr)});$('equipBody').innerHTML=list.map(x=>{const r=restaurantes.find(a=>a.id===x.restaurante_id);return`<tr><td>${esc(x.numero_serie)}</td><td>${esc(x.nome)}</td><td>${esc(x.fabricante||'—')}</td><td>${esc(x.modelo||'—')}</td><td>${esc(x.patrimonio||'—')}</td><td>${esc(r?.codigo||'—')}</td><td class="actions"><button onclick="editarEquipamento('${x.id}')">Editar</button><button onclick="desativarEquipamento('${x.id}')">Desativar</button></td></tr>`}).join('')||'<tr><td colspan="7">Nenhum equipamento encontrado.</td></tr>'}
+function editarEquipamento(id){const x=equipamentos.find(a=>a.id===id);if(!x)return;if(!isAdmin()&&!temMeuRest(x.restaurante_id))return alert('Acesso restrito.');equipEdit=id;$('eSerie').value=x.numero_serie||'';$('eNome').value=x.nome||'';$('eFabricante').value=x.fabricante||'';$('eModelo').value=x.modelo||'';$('ePatrimonio').value=x.patrimonio||'';$('eRest').value=x.restaurante_id||'';$('eCancelar').classList.remove('hidden');$('eSalvar').textContent='Salvar alterações';showPage('equipamentos')}
 async function desativarEquipamento(id){if(!confirm('Desativar equipamento?'))return;const{error}=await sb.from('equipamentos').update({ativo:false}).eq('id',id);if(error)return msg('equipMsg','Erro: '+error.message);await carregar()}
 
 async function salvarRestaurante(){if(!isGestor())return;const codigo=$('rCodigo').value.trim().toUpperCase(),nome=$('rNome').value.trim(),cidade=$('rCidade').value.trim(),uf=$('rUf').value.trim().toUpperCase();if(!codigo||!nome||uf.length!==2)return msg('restMsg','Código, nome e UF são obrigatórios.');const{error}=await sb.from('restaurantes').insert({codigo,nome,cidade,uf,ativo:true});if(error)return msg('restMsg','Erro: '+error.message);msg('restMsg','PDV cadastrado com sucesso.',true);await carregar()}
-function renderRestaurantes(){if(!isGestor())return;$('restBody').innerHTML=restaurantes.filter(x=>x.ativo!==false).map(x=>`<tr><td>${esc(x.codigo)}</td><td>${esc(x.nome)}</td><td>${esc(x.cidade||'—')}</td><td>${esc(x.uf||'—')}</td><td><button onclick="desativarRestaurante('${x.id}')">Desativar</button></td></tr>`).join('')}
+function renderRestaurantes(){if(!isGestor())return;$('restBody').innerHTML=restaurantes.filter(x=>x.ativo!==false&&(isAdmin()||temMeuRest(x.id))).map(x=>`<tr><td>${esc(x.codigo)}</td><td>${esc(x.nome)}</td><td>${esc(x.cidade||'—')}</td><td>${esc(x.uf||'—')}</td><td><button onclick="desativarRestaurante('${x.id}')">Desativar</button></td></tr>`).join('')}
 async function desativarRestaurante(id){if(!confirm('Desativar PDV?'))return;const{error}=await sb.from('restaurantes').update({ativo:false}).eq('id',id);if(error)return msg('restMsg','Erro: '+error.message);await carregar()}
 
 function carregarColaboradores(){const s=$('fColaborador'),rid=$('fRest').value;const list=usuarios.filter(u=>u.ativo!==false&&(!rid||u.restaurante_id===rid));const old=s.value;s.innerHTML='<option value="">Sem colaborador — Disponível</option>'+list.map(u=>`<option value="${u.id}">${esc(u.nome||u.email)}</option>`).join('');if(list.some(u=>u.id===old))s.value=old}
 function ajustaFerramenta(){const u=usuarios.find(x=>x.id===$('fColaborador').value);if(u?.restaurante_id)$('fRest').value=u.restaurante_id}
 async function salvarFerramenta(){if(!isGestor())return;const colaborador_id=$('fColaborador').value||null,restaurante_id=$('fRest').value,data_aquisicao=$('fData').value,marca=$('fMarca').value.trim(),descricao=$('fDesc').value.trim(),quantidade=Number($('fQtd').value);if(!restaurante_id||!data_aquisicao||!marca||!descricao||!(quantidade>0))return msg('ferrMsg','Preencha restaurante, data, marca, descrição e quantidade. Colaborador é opcional.');const c=colaborador_id?usuarios.find(u=>u.id===colaborador_id):null;if(c&&c.restaurante_id!==restaurante_id)return msg('ferrMsg','Colaborador e restaurante devem ser do mesmo PDV.');const payload={colaborador_id,restaurante_id,data_aquisicao,marca,descricao,quantidade,ativo:true};const q=ferrEdit?await sb.from('ferramentas').update(payload).eq('id',ferrEdit):await sb.from('ferramentas').insert(payload);if(q.error)return msg('ferrMsg','Erro: '+q.error.message);msg('ferrMsg',ferrEdit?'Ferramenta atualizada.':'Ferramenta cadastrada.',true);limparFerramenta();await carregar()}
 function limparFerramenta(){$('fColaborador').value='';$('fData').value='';$('fMarca').value='';$('fDesc').value='';$('fQtd').value='';ferrEdit=null;$('fCancelar').classList.add('hidden');$('fRest').value=meuRest()||'';carregarColaboradores()}
-function renderFerramentas(){if(!isGestor())return;const q=($('fBusca').value||'').toLowerCase(),fr=$('fFiltroRest').value,list=ferramentas.filter(x=>x.ativo!==false&&(isAdmin()||x.restaurante_id===meuRest())&&(!fr||x.restaurante_id===fr)&&`${x.colaborador?.nome||''} ${x.marca||''} ${x.descricao||''}`.toLowerCase().includes(q));$('ferrBody').innerHTML=list.map(x=>`<tr><td>${esc(x.colaborador?.nome||x.colaborador?.email||'—')}</td><td>${esc(x.restaurante?.codigo||'—')}</td><td>${fmt(x.data_aquisicao)}</td><td>${esc(x.marca)}</td><td>${esc(x.descricao)}</td><td>${x.quantidade}</td><td><span class="badge ${x.colaborador_id?'ok':'att'}">${x.colaborador_id?'Em uso':'Disponível'}</span></td><td class="actions"><button onclick="editarFerramenta('${x.id}')">Editar</button><button onclick="desativarFerramenta('${x.id}')">Devolver</button></td></tr>`).join('')||'<tr><td colspan="8">Nenhuma ferramenta.</td></tr>'}
+function gerarRelatorioConsolidadoFuncionario(){
+ if(!isAdmin())return alert('A geração do relatório consolidado é permitida somente ao Administrador.');
+ const colaboradorId=$('fFiltroColab').value;
+ if(!colaboradorId)return alert('Selecione um funcionário no filtro para gerar o relatório consolidado.');
+ const permitidos=new Set(meusRestIds());
+ const lista=ferramentas.filter(x=>x.ativo!==false&&x.colaborador_id===colaboradorId&&(isAdmin()||permitidos.has(x.restaurante_id)));
+ if(!lista.length)return alert('Este funcionário não possui ferramentas atualmente vinculadas.');
+ const col=lista[0].colaborador?.nome||lista[0].colaborador?.email||'Funcionário não identificado';
+ const rest=lista[0].restaurante?.codigo||'—',restNome=lista[0].restaurante?.nome||'';
+ const hoje=new Date().toLocaleDateString('pt-BR');
+ const total=lista.reduce((s,x)=>s+Number(x.quantidade||0),0);
+ const linhas=lista.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.descricao||'—')}</td><td>${esc(x.marca||'—')}</td><td style="text-align:center">${x.quantidade}</td><td>${x.data_aquisicao?fmt(x.data_aquisicao):'—'}</td><td>${esc(x.restaurante?.codigo||'—')}</td></tr>`).join('');
+ const w=window.open('','_blank','width=1000,height=850');
+ if(!w)return alert('O navegador bloqueou a abertura do relatório. Permita pop-ups para gerar o documento.');
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório consolidado - ${esc(col)}</title><style>body{font-family:Arial,sans-serif;margin:38px;color:#222;line-height:1.45}h1{text-align:center;font-size:22px;margin:25px 0 8px}h2{font-size:15px;border-bottom:1px solid #999;padding-bottom:6px;margin-top:22px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #222;padding-bottom:14px}.cab b{font-size:18px}.box{border:1px solid #999;padding:18px;margin-top:18px}.linha{display:flex;gap:28px;margin:10px 0}.campo{flex:1}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #aaa;padding:8px;font-size:12px}th{background:#eee;text-align:left}.total{text-align:right;font-weight:bold;margin-top:10px}.termo{margin-top:24px;text-align:justify}.assin{margin-top:90px;display:flex;gap:70px}.sig{flex:1;text-align:center;border-top:1px solid #222;padding-top:8px;min-height:52px}.dataAss{margin-top:45px;text-align:center}.rod{margin-top:38px;font-size:11px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:10px}@media print{body{margin:25px}button{display:none}}</style></head><body><div class="cab"><b>INVENTÁRIO CAHETEL</b><span>RELATÓRIO CONSOLIDADO DE FERRAMENTAS</span></div><h1>Termo de Responsabilidade e Entrega de Ferramentas</h1><div class="box"><h2>Funcionário</h2><div class="linha"><div class="campo"><b>Nome:</b> ${esc(col)}</div><div class="campo"><b>PDV:</b> ${esc(rest)} — ${esc(restNome)}</div></div><h2>Ferramentas vinculadas</h2><table><thead><tr><th>#</th><th>Descrição</th><th>Marca</th><th>Quantidade</th><th>Data de aquisição</th><th>PDV</th></tr></thead><tbody>${linhas}</tbody></table><div class="total">Total de itens/ferramentas: ${lista.length} &nbsp; | &nbsp; Quantidade total: ${total}</div></div><p class="termo">Declaro que recebi as ferramentas acima relacionadas e assumo a responsabilidade por sua guarda, conservação e utilização adequada, comprometendo-me a devolvê-las quando solicitado ou quando deixar de exercer a atividade que justifique sua utilização.</p><div class="assin"><div class="sig"><b>${esc(col)}</b><br>Assinatura do funcionário</div><div class="sig"><b>Representante da empresa</b><br>Assinatura do representante da empresa</div></div><div class="dataAss">Data da assinatura: ____/____/________</div><div class="rod">Relatório consolidado gerado pelo Inventário Cahetel em ${hoje}.</div><script>window.onload=function(){window.print()}<\/script></body></html>`);
+ w.document.close();
+}
+
+function renderFerramentas(){
+if(!isGestor())return;
+const gestor=!isAdmin();
+$('ferrGestorInfo').classList.toggle('hidden',!gestor);
+$('btnRelatorioFerramentas').classList.toggle('hidden',gestor);
+$('ferrCadastroArea').classList.toggle('hidden',gestor);
+const permitidos=new Set(meusRestIds());
+const q=($('fBusca').value||'').toLowerCase();
+const qd=($('fFiltroDesc').value||'').toLowerCase();
+const fr=$('fFiltroRest').value;
+const fc=$('fFiltroColab').value;
+const list=ferramentas.filter(x=>x.ativo!==false&&(isAdmin()||permitidos.has(x.restaurante_id))&&(!fr||x.restaurante_id===fr)&&(!fc||x.colaborador_id===fc)&&(!qd||`${x.descricao||''}`.toLowerCase().includes(qd))&&(!q||`${x.colaborador?.nome||''} ${x.colaborador?.email||''} ${x.marca||''} ${x.descricao||''}`.toLowerCase().includes(q)));
+$('ferrBody').innerHTML=list.map(x=>{
+ const acao=gestor ? '<span class="small muted">Somente visualização</span>' : `<div class="actions"><button onclick="editarFerramenta('${x.id}')">Editar</button><button onclick="desativarFerramenta('${x.id}')">Devolver</button></div>`;
+ return `<tr><td>${esc(x.colaborador?.nome||x.colaborador?.email||'—')}</td><td>${esc(x.restaurante?.codigo||'—')}</td><td>${fmt(x.data_aquisicao)}</td><td>${esc(x.marca)}</td><td>${esc(x.descricao)}</td><td>${x.quantidade}</td><td><span class="badge ${x.colaborador_id?'ok':'att'}">${x.colaborador_id?'Em uso':'Disponível'}</span></td><td>${acao}</td></tr>`;
+}).join('')||'<tr><td colspan="8">Nenhuma ferramenta encontrada nos PDVs liberados.</td></tr>';
+}
 function editarFerramenta(id){const x=ferramentas.find(a=>a.id===id);if(!x)return;ferrEdit=id;$('fRest').value=x.restaurante_id;$('fColaborador').value=x.colaborador_id||'';$('fData').value=x.data_aquisicao||'';$('fMarca').value=x.marca||'';$('fDesc').value=x.descricao||'';$('fQtd').value=x.quantidade||'';$('fCancelar').classList.remove('hidden');showPage('ferramentas')}
 async function desativarFerramenta(id){if(!confirm('Devolver/desativar esta ferramenta?'))return;const{error}=await sb.from('ferramentas').update({ativo:false}).eq('id',id);if(error)return msg('ferrMsg','Erro: '+error.message);await carregar()}
 
 function calcPiro(){const v=$('piAfer').value;if(!v)return $('piVenc').value='';const d=new Date(v+'T00:00:00');d.setFullYear(d.getFullYear()+1);$('piVenc').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 async function salvarPiro(){if(!isGestor())return;const localizacao_id=$('piRest').value,fabricante_modelo=$('piModelo').value,numero_serie=$('piSerie').value.trim(),data_afericao=$('piAfer').value;calcPiro();if(!localizacao_id||!fabricante_modelo||!numero_serie||!data_afericao)return msg('piMsg','Preencha localização, modelo, número de série e aferição.');if(!isAdmin()&&localizacao_id!==meuRest())return msg('piMsg','Gestor restrito ao restaurante vinculado.');const payload={localizacao_id,fabricante_modelo,numero_serie,data_afericao,data_vencimento:$('piVenc').value,ativo:true};const q=piroEdit?await sb.from('pirometros').update(payload).eq('id',piroEdit):await sb.from('pirometros').insert(payload);if(q.error)return msg('piMsg','Erro: '+q.error.message);msg('piMsg',piroEdit?'Pirômetro atualizado.':'Pirômetro cadastrado.',true);limparPiro();await carregar()}
 function limparPiro(){$('piRest').value='';$('piModelo').value='';$('piSerie').value='';$('piAfer').value='';$('piVenc').value='';piroEdit=null;$('piCancelar').classList.add('hidden')}
-function renderPirometros(){if(!isGestor())return;$('piBody').innerHTML=pirometros.filter(x=>x.ativo!==false&&(isAdmin()||x.localizacao_id===meuRest())).map(x=>`<tr><td>${esc(x.localizacao_codigo)}</td><td>${esc(x.fabricante_modelo)}</td><td>${esc(x.numero_serie)}</td><td>${fmt(x.data_afericao)}</td><td>${fmt(x.data_vencimento)}</td><td><span class="badge ${x.status==='VENCIDO'?'crit':x.status==='ALERTA'?'att':'ok'}">${esc(x.status||'OK')}</span></td><td class="actions"><button onclick="editarPiro('${x.id}')">Editar</button><button onclick="desativarPiro('${x.id}')">Desativar</button></td></tr>`).join('')||'<tr><td colspan="7">Nenhum pirômetro.</td></tr>'}
+function renderPirometros(){if(!isGestor())return;const q=($('piBusca')?.value||'').toLowerCase().trim(),fs=$('piFiltroStatus')?.value||'';const list=pirometros.filter(x=>x.ativo!==false&&(isAdmin()||meusRestIds().includes(x.localizacao_id))).filter(x=>{const txt=`${x.localizacao_codigo||''} ${x.localizacao_nome||''} ${x.fabricante_modelo||''} ${x.numero_serie||''}`.toLowerCase();return(!q||txt.includes(q))&&(!fs||(x.status||'OK')===fs)});if($('piTotal'))$('piTotal').textContent=list.length;$('piBody').innerHTML=list.map(x=>`<tr><td>${esc(x.localizacao_codigo||'—')}</td><td>${esc(x.fabricante_modelo)}</td><td>${esc(x.numero_serie)}</td><td>${fmt(x.data_afericao)}</td><td>${fmt(x.data_vencimento)}</td><td><span class="badge ${x.status==='VENCIDO'?'crit':x.status==='ALERTA'?'att':'ok'}">${esc(x.status||'OK')}</span></td><td class="actions"><button onclick="editarPiro('${x.id}')">Editar</button><button onclick="desativarPiro('${x.id}')">Desativar</button></td></tr>`).join('')||'<tr><td colspan="7">Nenhum pirômetro encontrado para os filtros informados.</td></tr>'}
 function editarPiro(id){const x=pirometros.find(a=>a.id===id);if(!x)return;piroEdit=id;$('piRest').value=x.localizacao_id;$('piModelo').value=x.fabricante_modelo;$('piSerie').value=x.numero_serie;$('piAfer').value=String(x.data_afericao).slice(0,10);$('piVenc').value=String(x.data_vencimento).slice(0,10);$('piCancelar').classList.remove('hidden');showPage('pirometros')}
 async function desativarPiro(id){if(!confirm('Desativar este pirômetro?'))return;const{error}=await sb.from('pirometros').update({ativo:false}).eq('id',id);if(error)return msg('piMsg','Erro: '+error.message);await carregar()}
 
-async function salvarUsuario(){if(!isAdmin())return msg('uMsg','Acesso permitido somente ao Administrador.');const nome=$('uNome').value.trim(),email=$('uEmail').value.trim(),senha=$('uSenha').value,perfilNovo=$('uPerfil').value,restaurante_id=$('uRest').value||null;if(!nome||!email||senha.length<6)return msg('uMsg','Nome, e-mail e senha (mín. 6) são obrigatórios.');const{data,error}=await sb.functions.invoke('admin-create-user',{body:{nome,email,senha,perfil:perfilNovo,restaurante_id}});if(error)return msg('uMsg','Erro: '+error.message);if(data?.error)return msg('uMsg','Erro: '+data.error);msg('uMsg','Usuário criado com sucesso.',true);$('uNome').value='';$('uEmail').value='';$('uSenha').value='';await carregar()}
-function renderUsuarios(){if(!isAdmin())return;$('uBody').innerHTML=usuarios.filter(x=>x.ativo!==false).map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.email)}</td><td>${esc(x.perfil)}</td><td>${esc(restaurantes.find(r=>r.id===x.restaurante_id)?.codigo||'—')}</td><td><span class="badge ok">Ativo</span></td><td><button onclick="desativarUsuario('${x.id}')">Desativar</button></td></tr>`).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>'}
+function atualizarResumoVinculosUsuario(){const nomes=Array.from(vinculosUsuarioSelecionados).map(id=>restaurantes.find(r=>r.id===id)).filter(Boolean).map(r=>r.codigo);$('uRestResumo').textContent=nomes.length?`${nomes.length} PDV(s): ${nomes.join(', ')}`:'Nenhum PDV selecionado'}
+function abrirVinculoUsuario(){if(!isAdmin())return;$('modalVinculoUsuario').classList.remove('hidden');$('modalVinculoUsuario').style.display='flex';renderListaVinculoUsuario()}
+function fecharVinculoUsuario(){$('modalVinculoUsuario').classList.add('hidden');$('modalVinculoUsuario').style.display='none';$('buscaVinculoUsuario').value='';$('vinculoUsuarioMsg').classList.add('hidden')}
+function renderListaVinculoUsuario(){const q=($('buscaVinculoUsuario').value||'').toLowerCase();const lista=restaurantes.filter(r=>r.ativo!==false&&`${r.codigo} ${r.nome} ${r.cidade||''}`.toLowerCase().includes(q));$('listaVinculoUsuario').innerHTML=lista.map(r=>`<label style="display:flex;gap:8px;align-items:center;padding:9px;border-bottom:1px solid #eee;cursor:pointer"><input type="checkbox" style="width:auto;margin:0" value="${r.id}" ${vinculosUsuarioSelecionados.has(r.id)?'checked':''} onchange="alternarVinculoUsuario('${r.id}',this.checked)"><span><b>${esc(r.codigo)}</b> — ${esc(r.nome)}${r.cidade?' • '+esc(r.cidade):''}</span></label>`).join('')||'<div class="small muted">Nenhum PDV disponível.</div>'}
+function alternarVinculoUsuario(id,checked){if(checked)vinculosUsuarioSelecionados.add(id);else vinculosUsuarioSelecionados.delete(id);atualizarResumoVinculosUsuario()}
+function confirmarVinculoUsuario(){if(vinculosUsuarioSelecionados.size===0)return msg('vinculoUsuarioMsg','Selecione pelo menos um PDV.');fecharVinculoUsuario()}
+async function salvarUsuario(){if(!isAdmin())return msg('uMsg','Acesso permitido somente ao Administrador.');const nome=$('uNome').value.trim(),email=$('uEmail').value.trim(),senha=$('uSenha').value,perfilNovo=$('uPerfil').value,sel=Array.from(vinculosUsuarioSelecionados),restaurante_id=sel[0]||null;if(usuarioEdit){if(!nome||!perfilNovo)return msg('uMsg','Nome e perfil são obrigatórios.');const{error}=await sb.from('usuarios').update({nome,perfil:perfilNovo,restaurante_id}).eq('id',usuarioEdit);if(error)return msg('uMsg','Erro ao atualizar usuário: '+error.message);const d=await sb.from('usuario_restaurantes').delete().eq('usuario_id',usuarioEdit);if(d.error)return msg('uMsg','Erro ao atualizar PDVs: '+d.error.message);if(sel.length){const a=await sb.from('usuario_restaurantes').insert(sel.map(restaurante_id=>({usuario_id:usuarioEdit,restaurante_id,ativo:true})));if(a.error)return msg('uMsg','Erro ao liberar PDVs: '+a.error.message)}msg('uMsg','Usuário atualizado com sucesso.',true);limparUsuario();await carregar();return}if(!nome||!email||senha.length<6)return msg('uMsg','Nome, e-mail e senha (mín. 6) são obrigatórios.');const{data,error}=await sb.functions.invoke('admin-create-user',{body:{nome,email,senha,perfil:perfilNovo,restaurante_id}});if(error)return msg('uMsg','Erro: '+error.message);if(data?.error)return msg('uMsg','Erro: '+data.error);const novoId=data?.user?.id||data?.id;if(novoId&&sel.length){const a=await sb.from('usuario_restaurantes').insert(sel.map(restaurante_id=>({usuario_id:novoId,restaurante_id,ativo:true})));if(a.error)return msg('uMsg','Usuário criado, mas houve erro ao liberar PDVs: '+a.error.message)}msg('uMsg','Usuário criado com sucesso.',true);limparUsuario();await carregar()}
+function limparUsuario(){usuarioEdit=null;vinculosUsuarioSelecionados=new Set();$('uNome').value='';$('uEmail').value='';$('uEmail').disabled=false;$('uSenha').value='';$('uSenha').placeholder='Senha inicial';$('uPerfil').value='Operacional';$('uRestResumo').textContent='Nenhum PDV selecionado';$('uSalvar').textContent='Cadastrar usuário';$('uCancelar').classList.add('hidden')}
+function editarUsuario(id){const x=usuarios.find(a=>a.id===id);if(!x)return;usuarioEdit=id;$('uNome').value=x.nome||'';$('uEmail').value=x.email||'';$('uEmail').disabled=true;$('uSenha').value='';$('uSenha').placeholder='Senha não alterada na edição';$('uPerfil').value=x.perfil||'Operacional';vinculosUsuarioSelecionados=new Set(usuarioRestaurantes.filter(a=>a.usuario_id===id&&a.ativo!==false).map(a=>a.restaurante_id));if(x.restaurante_id)vinculosUsuarioSelecionados.add(x.restaurante_id);atualizarResumoVinculosUsuario();$('uSalvar').textContent='Salvar alterações';$('uCancelar').classList.remove('hidden');showPage('usuarios')}
+function renderUsuarios(){if(!isAdmin())return;$('uBody').innerHTML=usuarios.filter(x=>x.ativo!==false).map(x=>{const pdvs=usuarioRestaurantes.filter(a=>a.usuario_id===x.id&&a.ativo!==false).map(a=>restaurantes.find(r=>r.id===a.restaurante_id)?.codigo).filter(Boolean);if(x.restaurante_id&&!pdvs.includes(restaurantes.find(r=>r.id===x.restaurante_id)?.codigo))pdvs.unshift(restaurantes.find(r=>r.id===x.restaurante_id)?.codigo);return`<tr><td>${esc(x.nome)}</td><td>${esc(x.email)}</td><td>${esc(x.perfil)}</td><td>${esc(pdvs.join(', ')||'—')}</td><td><span class="badge ok">Ativo</span></td><td class="actions"><button onclick="editarUsuario('${x.id}')">Editar</button><button onclick="desativarUsuario('${x.id}')">Desativar</button></td></tr>`}).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>'}
 async function desativarUsuario(id){if(!confirm('Desativar usuário?'))return;const{data,error}=await sb.functions.invoke('admin-delete-user-v2',{body:{user_id:id}});if(error)return msg('uMsg','Erro: '+error.message);if(data?.error)return msg('uMsg','Erro: '+data.error);await carregar()}
 
 async function alterarSenha(){const atual=$('senhaAtual').value,nova=$('senhaNova').value,conf=$('senhaConf').value;if(!atual||!nova||nova.length<6||nova!==conf)return msg('senhaMsg','Preencha corretamente a senha atual, nova senha e confirmação.');const{data,error}=await sb.functions.invoke('alterar-senha-v2',{body:{senha_atual:atual,nova_senha:nova}});if(error)return msg('senhaMsg','Erro: '+error.message);if(data?.error)return msg('senhaMsg','Erro: '+data.error);msg('senhaMsg','Senha alterada com sucesso.',true);$('senhaAtual').value='';$('senhaNova').value='';$('senhaConf').value=''}
 
-function showPage(id){if(['pecasCadastro','equipamentos','restaurantes','ferramentas','pirometros','usuarios'].includes(id)&&!isGestor())return;document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');if(id==='pecasCadastro')prepararPecaRest();if(id==='ferramentas')carregarColaboradores()}
+function showPage(id){if(['pecasCadastro','equipamentos','restaurantes','ferramentas','pirometros','usuarios'].includes(id)&&!isGestor())return;document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');if(id==='pecasCadastro'){prepararPecaRest();renderPecas()}if(id==='estoque'){renderEstoque()}if(id==='ferramentas')carregarColaboradores();if(id==='usuarios')renderUsuarios()}
 (async()=>{const{data}=await sb.auth.getSession();if(data.session)await iniciar(data.session.user)})();
 </script>
 </body></html>
